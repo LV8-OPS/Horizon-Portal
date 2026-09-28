@@ -33,3 +33,7 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Backup variants
+*.backup*
+
