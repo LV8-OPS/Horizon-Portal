@@ -13,7 +13,7 @@ from sqlalchemy import text
 
 from .security import SESSION_COOKIE, create_token, decode_token, hash_password, verify_password
 from .crud import theme_entitlements
-from .routers import admin, auth, creators as creators_api, downloads as downloads_api, themes as themes_api
+from .routers import admin, auth, creators as creators_api, downloads as downloads_api, themes as themes_api, discord as discord_api
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -123,6 +123,10 @@ async def startup() -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN creator_badge INTEGER NOT NULL DEFAULT 0"))
         if "beta_access" not in columns:
             conn.execute(text("ALTER TABLE users ADD COLUMN beta_access INTEGER NOT NULL DEFAULT 0"))
+        if "discord_id" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN discord_id VARCHAR(32)"))
+        if "discord_username" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN discord_username VARCHAR(255) NOT NULL DEFAULT ''"))
     db = SessionLocal()
     try:
         seed(db)
@@ -131,6 +135,7 @@ async def startup() -> None:
 
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(discord_api.router, prefix="/api/auth", tags=["discord"])
 app.include_router(creators_api.router, prefix="/api/creators", tags=["creators"])
 app.include_router(downloads_api.router, prefix="/api/downloads", tags=["downloads"])
 app.include_router(themes_api.router, prefix="/api/themes", tags=["themes"])

@@ -27,11 +27,13 @@ def seed(db):
     for slug, title, description, unlock_type in theme_seed:
         if not db.query(Theme).filter(Theme.slug == slug).first():
             db.add(Theme(slug=slug, title=title, description=description, unlock_type=unlock_type))
-    if not db.query(User).filter(User.username == "admin").first():
+    import os
+    admin_password = os.getenv("HORIZON_ADMIN_PASSWORD", "").strip()
+    if admin_password and not db.query(User).filter(User.username == "admin").first():
         db.add(User(
             email="admin@horizon.local",
             username="admin",
-            password_hash=hash_password("admin123"),
+            password_hash=hash_password(admin_password),
             role="admin",
         ))
     db.commit()

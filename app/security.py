@@ -3,7 +3,9 @@ from jose import jwt, JWTError
 
 SESSION_COOKIE = "horizon_session"
 
-SECRET_KEY = "horizon-portal-secret-key-change-this"
+import os
+
+SECRET_KEY = os.getenv("SECRET_KEY", "horizon-portal-dev-secret-change-in-production")
 ALGORITHM = "HS256"
 TOKEN_MAX_AGE = 60 * 60 * 24 * 30
 ACCESS_TOKEN_MAX_AGE = 60 * 15

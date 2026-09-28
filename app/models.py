@@ -38,3 +38,5 @@ class User(Base):
     donation_cents = Column(Integer, default=0, nullable=False)
     creator_badge = Column(Integer, default=0, nullable=False)
     beta_access = Column(Integer, default=0, nullable=False)
+    discord_id = Column(String(32), unique=True, index=True, nullable=True)
+    discord_username = Column(String(255), default="", nullable=False)
