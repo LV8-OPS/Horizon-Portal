@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08090c">
+
+  <title>
+    {{ site_name }}{% if request.url.path != '/' %} · {{ request.url.path.strip('/').replace('-', ' ').title() }}{% endif %}
+  </title>
+
+  <link rel="stylesheet" href="{{ url_for('static', path='Index.css') }}">
+
+  <script defer src="{{ url_for('static', path='js/network.js') }}"></script>
+  <script defer src="{{ url_for('static', path='js/gold.js') }}"></script>
+</head>
+
+<body>
+
+  <canvas id="particles" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+
+    <!-- Brand -->
+    <a class="brand" href="/" aria-label="Horizon Portal home">
+      <span class="brand-mark">H</span>
+      <span>Horizon Portal</span>
+    </a>
+
+    <!-- Navigation -->
+    <nav class="nav" aria-label="Main navigation">
+      {% for label, href in nav %}
+        <a
+          class="nav-link{% if request.url.path == href %} active{% endif %}"
+          href="{{ href }}"
+        >
+          {{ t(label) }}
+        </a>
+      {% endfor %}
+    </nav>
+
+    <!-- Authentication -->
+    <div class="top-actions">
+
+      {% if user %}
+
+        <!-- Logged in -->
+        <span class="top-link user-name">
+          {{ user.username }}
+        </span>
+
+        <form
+          method="post"
+          action="/logout"
+          style="display: inline;"
+        >
+          <button
+            class="top-link top-link-accent"
+            type="submit"
+          >
+            Logout
+          </button>
+        </form>
+
+      {% else %}
+
+        <!-- Logged out -->
+        <a
+          class="top-link"
+          href="/login"
+        >
+          {{ t('login') }}
+        </a>
+
+        <a
+          class="top-link top-link-accent"
+          href="/register"
+        >
+          {{ t('register') }}
+        </a>
+
+      {% endif %}
+
+    </div>
+
+  </header>
+
+  <main class="shell">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+
+    <a
+      href="https://discord.gg/5W6ZqRvnNJ"
+      target="_blank"
+      rel="noreferrer"
+    >
+      Discord
+    </a>
+
+    <a href="/themes">
+      Themes
+    </a>
+
+    <a href="/settings">
+      {{ t('settings') }}
+    </a>
+
+  </footer>
+
+</body>
+</html>

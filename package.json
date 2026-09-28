@@ -1,0 +1,10 @@
+{
+  "name": "horizon-portal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "NODE_ENV=production node server.js"
+  },
+  "engines": { "node": ">=18" }
+}

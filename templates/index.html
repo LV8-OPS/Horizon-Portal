@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow gold-shimmer">{{ t('slogan') }}</p>
+    <h1>{{ t('welcome') }}</h1>
+    <p class="hero-lead">{{ t('subtitle') }}</p>
+    <p class="hero-copy">Discover · Install · Manage · Play.</p>
+    <div class="hero-actions">
+      <a class="btn gold-shimmer" href="/download">{{ t('download_btn') }}</a>
+      <a class="btn btn-secondary" href="/workshop">{{ t('explore') }}</a>
+    </div>
+  </div>
+  <aside class="hero-aside">
+    <div class="stat-card"><span class="stat-label">Focus</span><strong>Destiny 2 Modded</strong><p>SunRise, Dawn and future community projects.</p></div>
+    <div class="stat-card"><span class="stat-label">Workflow</span><strong>Discover → Install</strong><p>Everything starts from one centralized portal.</p></div>
+  </aside>
+</section>
+
+<section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">HORIZON PORTAL</p><h2>{{ t('what_is') }}</h2></div>
+  <div class="two-col">
+    <p class="long-copy">{{ t('what_is_desc') }}</p>
+    <div class="highlight-list">
+      <div class="highlight-item"><span>01</span><p>Centralized workshop instead of scattered links.</p></div>
+      <div class="highlight-item"><span>02</span><p>Clear project information and compatibility.</p></div>
+      <div class="highlight-item"><span>03</span><p>Creators, players and community in one place.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">PLAYER EXPERIENCE</p><h2>Built around the useful part.</h2></div>
+  <div class="grid-4">
+    <article class="info-card"><h3>Browse</h3><p>Find projects through a structured workshop.</p></article>
+    <article class="info-card"><h3>Inspect</h3><p>See creator, version, compatibility and updates.</p></article>
+    <article class="info-card"><h3>Install</h3><p>Follow a simple installation path instead of hunting through Discord.</p></article>
+    <article class="info-card"><h3>Play</h3><p>Keep the portal focused on getting you to the content.</p></article>
+  </div>
+</section>
+
+<section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">COMMUNITY</p><h2>Discord remains part of the ecosystem.</h2></div>
+  <div class="steps">
+    <div class="step"><strong>01</strong><p>Join Discord</p></div>
+    <div class="step"><strong>02</strong><p>Open a ticket</p></div>
+    <div class="step"><strong>03</strong><p>Present the project</p></div>
+    <div class="step"><strong>04</strong><p>Project review</p></div>
+    <div class="step"><strong>05</strong><p>Publication</p></div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero"><div><p class="eyebrow">Creators</p><h1>{{ t('creator_title') }}</h1><p class="hero-lead">{{ t('creator_intro') }}</p><div class="hero-actions"><a class="btn gold-shimmer" href="https://discord.gg/5W6ZqRvnNJ" target="_blank" rel="noreferrer">{{ t('discord_btn') }}</a><a class="btn btn-secondary" href="https://discord.gg/5W6ZqRvnNJ" target="_blank" rel="noreferrer">Apply through Discord</a></div></div></section>
+<section class="panel"><div class="section-head"><p class="section-kicker">PROCESS</p><h2>How publishing works</h2></div><div class="steps">{% for s in steps %}<div class="step"><strong>0{{ loop.index }}</strong><p>{{ s }}</p></div>{% endfor %}</div></section>
+<section class="panel"><div class="section-head"><p class="section-kicker">CONTENT</p><h2>Supported project types</h2></div><div class="cards">{% for item in types %}<article class="card"><h3>{{ item }}</h3><p>Organized as a clear project category inside the Workshop.</p></article>{% endfor %}</div></section>
+{% endblock %}

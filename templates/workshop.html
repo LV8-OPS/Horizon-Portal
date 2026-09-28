@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero"><div><p class="eyebrow">Workshop</p><h1>{{ t('workshop_title') }}</h1><p class="hero-lead">A structured catalog for Destiny modded projects, built to make discovery less painful.</p></div></section>
+<section class="panel"><div class="section-head"><p class="section-kicker">DISCOVER</p><h2>Everything has a place.</h2></div><div class="cards">{% for f in features %}<article class="card"><h3>{{ f }}</h3><p>Designed to keep project information visible and easy to understand.</p></article>{% endfor %}</div></section>
+<section class="panel"><div class="section-head"><p class="section-kicker">CATEGORIES</p><h2>Filter by project type.</h2></div><div>{% for c in categories %}<span class="chip">{{ c }}</span>{% endfor %}</div></section>
+{% endblock %}

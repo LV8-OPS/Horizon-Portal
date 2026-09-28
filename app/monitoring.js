@@ -1,0 +1,1 @@
+export function initMonitoring(){ if (typeof window === 'undefined') return; window.__HP_DEBUG__ = location.search.includes('debug=1'); if (!window.__HP_DEBUG__) return; const start = performance.now(); window.addEventListener('load', () => console.debug('[PERF]', { load: Math.round(performance.now() - start) })); }

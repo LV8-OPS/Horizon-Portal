@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Themes</p>
+    <h1>Horizon Art Direction.</h1>
+    <p class="hero-lead">Chaque thème est contrôlé côté serveur. L'interface peut afficher un thème verrouillé, mais l'API ne délivre jamais son accès sans le droit correspondant.</p>
+  </div>
+</section>
+<section class="panel">
+  <div class="cards">
+    {% for theme in themes %}
+    <article class="card theme-card {% if not theme.unlocked %}locked{% endif %}">
+      <p class="eyebrow">{{ theme.title }}</p>
+      <h3>{{ theme.title }}</h3>
+      <p>
+        {% if theme.unlocked %}
+          Accès autorisé pour ce compte.
+        {% else %}
+          Accès verrouillé. {{ theme.requirement }}.
+        {% endif %}
+      </p>
+      <div class="theme-access">
+        <span class="badge {% if theme.unlocked %}badge-ok{% else %}badge-lock{% endif %}">
+          {% if theme.unlocked %}UNLOCKED{% else %}LOCKED{% endif %}
+        </span>
+        <span>{{ theme.requirement }}</span>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

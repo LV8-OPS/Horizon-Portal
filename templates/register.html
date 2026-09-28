@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="panel form-panel">
+    <p class="eyebrow">Account</p>
+
+```
+<h1>{{ t('register') }}</h1>
+
+<form method="post" action="/register">
+    <div class="form-field">
+        <label for="username">Username</label>
+        <input
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            required
+        >
+    </div>
+
+    <div class="form-field">
+        <label for="email">Email</label>
+        <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+        >
+    </div>
+
+    <div class="form-field">
+        <label for="password">Password</label>
+        <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            required
+        >
+    </div>
+
+    <div class="form-field">
+        <label for="password_confirm">Confirm password</label>
+        <input
+            id="password_confirm"
+            name="password_confirm"
+            type="password"
+            autocomplete="new-password"
+            required
+        >
+    </div>
+
+    <button class="btn" type="submit">
+        {{ t('register') }}
+    </button>
+</form>
+```
+
+</section>
+{% endblock %}

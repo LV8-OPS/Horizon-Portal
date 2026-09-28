@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero"><div><p class="eyebrow">Creators</p><h1>People behind the projects.</h1><p class="hero-lead">Discover the creators contributing content to the Horizon ecosystem.</p></div></section>
+<section class="panel"><div class="cards">{% for creator in creators %}<article class="card"><p class="eyebrow">Creator</p><h3>{{ creator.name }}</h3><p>{{ creator.description }}</p><a class="btn btn-secondary" href="/creator">View program</a></article>{% endfor %}</div></section>
+{% endblock %}

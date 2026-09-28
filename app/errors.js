@@ -1,0 +1,1 @@
+export function initErrors(logger){ if (typeof window === 'undefined') return; window.addEventListener('error', e => logger.error('Global', 'Unhandled error', e.error || e.message)); window.addEventListener('unhandledrejection', e => logger.error('Global', 'Unhandled promise rejection', e.reason)); }
