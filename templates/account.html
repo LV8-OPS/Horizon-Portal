@@ -6,12 +6,11 @@
     <h1>{{ t('account_title') }}</h1>
     <p class="hero-lead">{{ t('account_intro') }}</p>
     <div class="hero-actions">
-      <a class="btn gold-shimmer" href="/api/auth/discord/start?mode=web">Connect Discord</a>
-      <a class="btn btn-secondary" href="/login">{{ t('login') }}</a>
-      <a class="btn btn-secondary" href="/register">{{ t('register') }}</a>
+      <a class="btn gold-shimmer" href="/api/auth/discord/start?mode=web">Reconnecter Discord</a>
     </div>
   </div>
 </section>
+
 <section class="panel">
   <div class="section-head">
     <p class="section-kicker">PROFILE</p>
@@ -20,7 +19,7 @@
   <div class="cards">
     <article class="card">
       <h3>Discord</h3>
-      <p>Link your Discord identity to Horizon. The launcher uses this identity instead of any administrator credentials.</p>
+      <p>Votre identité Discord est utilisée pour la connexion et les droits Horizon.</p>
     </article>
     <article class="card">
       <h3>{{ t('inbox') }}</h3>
@@ -33,9 +32,6 @@
         <button class="btn btn-secondary" name="language" value="fr">Français</button>
       </form>
     </article>
-  </div>
-  <div class="hero-actions">
-    <a class="btn gold-shimmer" href="/settings">Security settings</a>
   </div>
 </section>
 {% endblock %}
