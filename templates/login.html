@@ -1,47 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <section class="panel form-panel">
-    <p class="eyebrow">Account</p>
+    <p class="eyebrow">Horizon Portal</p>
+    <h1>{{ t('login') }}</h1>
+    <p>La connexion Horizon Portal se fait avec votre compte Discord.</p>
 
-```
-<h1>{{ t('login') }}</h1>
-
-<form method="post" action="/login">
-    <div class="form-field">
-        <label for="identifier">Username or Email</label>
-        <input
-            id="identifier"
-            name="identifier"
-            type="text"
-            autocomplete="username"
-            required
-        >
+    <div class="hero-actions">
+        <a class="btn gold-shimmer" href="/api/auth/discord/start?mode=web">
+            Se connecter avec Discord
+        </a>
     </div>
 
-    <div class="form-field">
-        <label for="password">Password</label>
-        <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            required
-        >
-    </div>
-
-    <input
-        type="hidden"
-        name="next"
-        value="{{ next | default('/account') }}"
-    >
-
-    <button class="btn" type="submit">
-        {{ t('login') }}
-    </button>
-</form>
-```
-
+    <p class="muted">Votre compte Horizon est créé automatiquement lors de votre première connexion Discord.</p>
 </section>
 {% endblock %}
