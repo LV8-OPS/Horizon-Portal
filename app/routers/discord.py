@@ -2,7 +2,9 @@ import os
 import secrets
 import urllib.parse
 import urllib.request
+import urllib.error
 import json
+import traceback
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import or_
@@ -52,8 +54,20 @@ def _exchange_code(code: str, redirect_uri: str):
     auth = f"{client_id}:{client_secret}".encode()
     import base64
     request.add_header("Authorization", "Basic " + base64.b64encode(auth).decode())
-    with urllib.request.urlopen(request, timeout=10) as response:
-        return json.loads(response.read().decode("utf-8"))
+
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        print("DISCORD OAUTH TOKEN ERROR")
+        print("HTTP STATUS:", exc.code)
+        print("RESPONSE:", error_body)
+        raise
+    except Exception as exc:
+        print("DISCORD OAUTH TOKEN REQUEST ERROR:", repr(exc))
+        traceback.print_exc()
+        raise
 
 
 def _state_token(mode: str) -> str:
@@ -118,9 +132,20 @@ def discord_callback(code: str = "", state: str = ""):
     try:
         token_data = _exchange_code(code, redirect_uri)
         discord_token = token_data["access_token"]
-        discord_user = _discord_request(f"{DISCORD_API}/users/@me", access_token=discord_token)
     except Exception as exc:
+        print("DISCORD OAUTH CALLBACK ERROR:", repr(exc))
+        traceback.print_exc()
         raise HTTPException(status_code=502, detail="Discord authorization failed.") from exc
+
+    try:
+        discord_user = _discord_request(
+            f"{DISCORD_API}/users/@me",
+            access_token=discord_token,
+        )
+    except Exception as exc:
+        print("DISCORD USER API ERROR:", repr(exc))
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail="Discord user lookup failed.") from exc
 
     guild_id = _env("DISCORD_GUILD_ID", True)
     bot_token = _env("DISCORD_BOT_TOKEN")
@@ -162,6 +187,8 @@ def discord_callback(code: str = "", state: str = ""):
                 if role_id in role_names_by_id
             }
         except Exception as exc:
+            print("DISCORD ROLE VERIFICATION ERROR:", repr(exc))
+            traceback.print_exc()
             raise HTTPException(status_code=403, detail="Unable to verify Discord server roles.") from exc
     elif guild_id:
         try:
@@ -171,6 +198,8 @@ def discord_callback(code: str = "", state: str = ""):
         except HTTPException:
             raise
         except Exception as exc:
+            print("DISCORD GUILD MEMBERSHIP ERROR:", repr(exc))
+            traceback.print_exc()
             raise HTTPException(status_code=502, detail="Unable to verify Discord server membership.") from exc
 
     username = discord_user.get("global_name") or discord_user.get("username") or f"user-{discord_user['id']}"
@@ -256,3 +285,4 @@ def launcher_me(request: Request):
         return {"authenticated": True, **_public_user(user)}
     finally:
         db.close()
+    
