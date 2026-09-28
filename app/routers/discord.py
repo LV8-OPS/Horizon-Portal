@@ -132,10 +132,20 @@ def discord_callback(code: str = "", state: str = ""):
     try:
         token_data = _exchange_code(code, redirect_uri)
         discord_token = token_data["access_token"]
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        print("DISCORD OAUTH CALLBACK HTTP ERROR:", exc.code, error_body)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Discord token exchange failed ({exc.code}): {error_body[:500]}",
+        ) from exc
     except Exception as exc:
         print("DISCORD OAUTH CALLBACK ERROR:", repr(exc))
         traceback.print_exc()
-        raise HTTPException(status_code=502, detail="Discord authorization failed.") from exc
+        raise HTTPException(
+            status_code=502,
+            detail=f"Discord OAuth error: {type(exc).__name__}: {str(exc)[:300]}",
+        ) from exc
 
     try:
         discord_user = _discord_request(
