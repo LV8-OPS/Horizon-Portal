@@ -67,21 +67,9 @@
       {% else %}
 
         <!-- Logged out -->
-        <a
-          class="top-link"
-          href="/login"
-        >
-          {{ t('login') }}
-        </a>
+        <a class="top-link top-link-accent" href="/api/auth/discord/start?mode=web">Discord</a>
 
-        <a
-          class="top-link top-link-accent"
-          href="/register"
-        >
-          {{ t('register') }}
-        </a>
-
-      {% endif %}
+{% endif %}
 
     </div>
 
