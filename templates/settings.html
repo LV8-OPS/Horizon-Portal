@@ -1,2 +1,24 @@
 {% extends "base.html" %}
-{% block content %}<section class="panel"><p class="eyebrow">Settings</p><h1>{{ t('settings') }}</h1><p class="long-copy">Interface preferences and account options will be managed here.</p><div class="cards"><article class="card"><h3>Language</h3><form method="post" action="/set-language" class="btn-row"><button class="btn" name="language" value="en">English</button><button class="btn btn-secondary" name="language" value="fr">Français</button></form></article><article class="card"><h3>Appearance</h3><p>Horizon Dark is currently the default theme.</p></article></div></section>{% endblock %}
+{% block content %}
+<section class="panel">
+  <p class="eyebrow">Settings</p>
+  <h1>{{ t('settings') }}</h1>
+  <p class="long-copy">Interface preferences and account options.</p>
+  {% if password_message %}<div class="card" style="margin:18px 0;border-color:rgba(212,175,55,.35)"><p>{{ password_message }}</p></div>{% endif %}
+  <div class="cards">
+    <article class="card"><h3>Language</h3><form method="post" action="/set-language" class="btn-row"><button class="btn" name="language" value="en">English</button><button class="btn btn-secondary" name="language" value="fr">Français</button></form></article>
+    <article class="card"><h3>Appearance</h3><p>Horizon Dark is currently the default theme.</p></article>
+  </div>
+</section>
+<section class="panel form-panel">
+  <p class="section-kicker">SECURITY</p>
+  <h2>Change password</h2>
+  <p class="long-copy">Use your current password to set a new one. Minimum 8 characters.</p>
+  <form method="post" action="/account/password">
+    <div class="form-field"><label for="current_password">Current password</label><input id="current_password" name="current_password" type="password" autocomplete="current-password" required></div>
+    <div class="form-field"><label for="new_password">New password</label><input id="new_password" name="new_password" type="password" minlength="8" autocomplete="new-password" required></div>
+    <div class="form-field"><label for="new_password_confirm">Confirm new password</label><input id="new_password_confirm" name="new_password_confirm" type="password" minlength="8" autocomplete="new-password" required></div>
+    <button class="btn gold-shimmer" type="submit">Update password</button>
+  </form>
+</section>
+{% endblock %}

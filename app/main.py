@@ -11,7 +11,7 @@ from . import models
 from .crud import seed, authenticate_user, get_user, register_user
 from sqlalchemy import text
 
-from .security import SESSION_COOKIE, create_token, decode_token
+from .security import SESSION_COOKIE, create_token, decode_token, hash_password, verify_password
 from .crud import theme_entitlements
 from .routers import admin, auth, creators as creators_api, downloads as downloads_api, themes as themes_api
 
@@ -241,10 +241,11 @@ async def creator(request: Request):
 @app.get("/download", response_class=HTMLResponse)
 async def download(request: Request):
     return page(request, "download.html", {
-        "version": "Coming soon",
-        "size": "Coming soon",
+        "version": "0.1.0",
+        "size": "11.4 MB",
         "system": "Windows 10 / 11",
-        "steps": ["Download the installer", "Run the .exe", "Install Horizon Portal", "Open the launcher"],
+        "launcher_download_url": "/static/downloads/Horizon-Portal-Setup.exe",
+        "steps": ["Download the installer", "Run the .exe", "Install Horizon Manager", "Open the launcher"],
     })
 
 
@@ -266,7 +267,39 @@ async def settings(request: Request):
     user = current_user(request)
     if not user:
         return auth_redirect(request)
-    return page(request, "settings.html")
+    message = None
+    if request.query_params.get("password_changed") == "1":
+        message = "Mot de passe mis à jour avec succès."
+    return page(request, "settings.html", {"password_message": message})
+
+
+@app.post("/account/password")
+async def change_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    new_password_confirm: str = Form(...),
+):
+    user_data = current_user(request)
+    if not user_data:
+        return auth_redirect(request)
+
+    if len(new_password) < 8:
+        return page(request, "settings.html", {"password_message": "Le nouveau mot de passe doit contenir au moins 8 caractères."})
+    if new_password != new_password_confirm:
+        return page(request, "settings.html", {"password_message": "Les nouveaux mots de passe ne correspondent pas."})
+
+    db = SessionLocal()
+    try:
+        user = get_user(db, user_data["id"])
+        if not user or not verify_password(current_password, user.password_hash):
+            return page(request, "settings.html", {"password_message": "Le mot de passe actuel est incorrect."})
+        user.password_hash = hash_password(new_password)
+        db.commit()
+    finally:
+        db.close()
+
+    return RedirectResponse(url="/settings?password_changed=1", status_code=303)
 
 
 @app.get("/themes", response_class=HTMLResponse)
