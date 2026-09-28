@@ -358,22 +358,11 @@ async def register_page(request: Request):
 
 
 @app.post("/register")
-async def register_submit(request: Request, username: str = Form(...), email: str = Form(...), password: str = Form(...), password_confirm: str = Form(...)):
-    if len(username.strip()) < 3:
-        return page(request, "register.html", {"error": "Le nom d'utilisateur doit contenir au moins 3 caractères."})
-    if len(password) < 8:
-        return page(request, "register.html", {"error": "Le mot de passe doit contenir au moins 8 caractères."})
-    if password != password_confirm:
-        return page(request, "register.html", {"error": "Les mots de passe ne correspondent pas."})
-
-    db = SessionLocal()
-    try:
-        user = register_user(db, {"username": username, "email": email, "password": password})
-    finally:
-        db.close()
-    if not user:
-        return page(request, "register.html", {"error": "Ce nom d'utilisateur ou cette adresse email est déjà utilisé."})
-    return RedirectResponse(url="/login?registered=1", status_code=303)
+async def register_submit(request: Request):
+    return RedirectResponse(
+        url="/api/auth/discord/start?mode=web",
+        status_code=303,
+    )
 
 
 @app.post("/logout")
@@ -505,10 +494,9 @@ async def horizon_login_page(request: Request):
 
 @app.get("/register", response_class=HTMLResponse)
 async def horizon_register_page(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="register.html",
-        context=_horizon_context(request)
+    return RedirectResponse(
+        url="/api/auth/discord/start?mode=web",
+        status_code=303,
     )
 
 
