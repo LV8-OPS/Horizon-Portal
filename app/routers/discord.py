@@ -48,7 +48,11 @@ def _exchange_code(code: str, redirect_uri: str):
     request = urllib.request.Request(
         f"{DISCORD_API}/oauth2/token",
         data=body,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
+            "User-Agent": "Horizon-Portal (https://horizon-portal-lv-8-e7ea.vercel.app, 1.0)",
+        },
         method="POST",
     )
     auth = f"{client_id}:{client_secret}".encode()
