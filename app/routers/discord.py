@@ -179,45 +179,10 @@ def discord_callback(request: Request, code: str = "", state: str = ""):
         traceback.print_exc()
         raise HTTPException(status_code=502, detail="Unable to complete Discord authentication.") from exc
 
-    guild_id = _env("DISCORD_GUILD_ID", True)
-    bot_token = _env("DISCORD_BOT_TOKEN")
-    role_ids = {
-        "donator": "1554117251458801754",
-        "corrupted_donator": "1554117420589908078",
-        "aria_donator": "1554117573862498454",
-        "creator": "1554117678996922488",
-        "beta": "1554117795334197278",
-    }
-
-    roles: set[str] = set()
-    role_verification = False
-
-    if guild_id and bot_token:
-        try:
-            member = _discord_request(
-                f"{DISCORD_API}/guilds/{guild_id}/members/{discord_user['id']}",
-                bot_token=bot_token,
-            )
-            roles = {str(role) for role in member.get("roles", [])}
-            role_verification = True
-        except Exception as exc:
-            print("DISCORD ROLE VERIFICATION ERROR:", repr(exc))
-            raise HTTPException(status_code=403, detail="Unable to verify Discord server roles.") from exc
-    elif guild_id:
-        # Fail closed when the bot cannot verify roles. Membership alone never
-        # grants Creator/BETA access.
-        try:
-            guilds = _discord_request(
-                f"{DISCORD_API}/users/@me/guilds",
-                access_token=discord_token,
-            )
-            if not any(str(g.get("id")) == guild_id for g in guilds):
-                raise HTTPException(status_code=403, detail="Your Discord account is not a member of the Horizon server.")
-        except HTTPException:
-            raise
-        except Exception as exc:
-            raise HTTPException(status_code=502, detail="Unable to verify Discord server membership.") from exc
-
+    # Keep the OAuth callback fast: Discord identity is established here,
+    # while guild membership and roles are verified immediately by /launcher/me.
+    # This avoids making the Discord authorization page wait on a second Discord
+    # API request before it can hand the deep link back to Horizon Manager.
     discord_id = str(discord_user["id"])
     requested_username = (discord_user.get("global_name") or discord_user.get("username") or f"user-{discord_id}").strip()
     requested_username = requested_username[:240] or f"user-{discord_id}"
@@ -247,7 +212,37 @@ def discord_callback(request: Request, code: str = "", state: str = ""):
         user.discord_id = discord_id
         user.discord_username = str(discord_user.get("username", ""))[:255]
 
-        if role_verification:
+        # Do not grant or revoke entitlements in the OAuth callback.
+        # /launcher/me performs the authoritative guild/role refresh.
+        if user.donation_cents is None:
+            user.donation_cents = 0
+        if user.creator_badge is None:
+            user.creator_badge = 0
+        if user.beta_access is None:
+            user.beta_access = 0
+
+        db.commit()
+        db.refresh(user)
+
+        if mode == "web":
+            guild_id = _env("DISCORD_GUILD_ID", True)
+            bot_token = _env("DISCORD_BOT_TOKEN", True)
+            role_ids = {
+                "donator": "1554117251458801754",
+                "corrupted_donator": "1554117420589908078",
+                "aria_donator": "1554117573862498454",
+                "creator": "1554117678996922488",
+                "beta": "1554117795334197278",
+            }
+            try:
+                member = _discord_request(
+                    f"{DISCORD_API}/guilds/{guild_id}/members/{discord_id}",
+                    bot_token=bot_token,
+                )
+                roles = {str(role) for role in member.get("roles", [])}
+            except Exception as exc:
+                raise HTTPException(status_code=403, detail="Unable to verify Discord server membership and roles.") from exc
+
             user.donation_cents = (
                 1000 if role_ids["aria_donator"] in roles
                 else 500 if role_ids["corrupted_donator"] in roles
@@ -256,13 +251,8 @@ def discord_callback(request: Request, code: str = "", state: str = ""):
             )
             user.creator_badge = 1 if role_ids["creator"] in roles else 0
             user.beta_access = 1 if role_ids["beta"] in roles else 0
-        else:
-            user.donation_cents = 0
-            user.creator_badge = 0
-            user.beta_access = 0
-
-        db.commit()
-        db.refresh(user)
+            db.commit()
+            db.refresh(user)
 
         if mode == "web":
             response = RedirectResponse("/account", status_code=303)
