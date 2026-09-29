@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime
+from datetime import datetime
 from .database import Base
 import uuid
 
@@ -74,4 +75,17 @@ class RedeemCode(Base):
     code_hash = Column(String(64), unique=True, index=True, nullable=False)
     entitlement = Column(String(100), nullable=False, default="beta")
     redeemed_by_auth_id = Column(String(36), nullable=True, index=True)
+    redeemed_by_device_id = Column(String(64), nullable=True, index=True)
     redeemed_at = Column(DateTime, nullable=True)
+
+class ModUploadRequest(Base):
+    __tablename__ = "mod_upload_requests"
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(String(64), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    game = Column(String(50), nullable=False)
+    description = Column(Text, default="")
+    file_name = Column(String(255), default="")
+    file_size = Column(Integer, default=0)
+    status = Column(String(50), default="pending", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

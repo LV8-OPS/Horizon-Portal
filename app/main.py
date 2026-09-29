@@ -15,7 +15,7 @@ from sqlalchemy import text
 
 from .security import SESSION_COOKIE, create_token, decode_token, hash_password, verify_password
 from .crud import theme_entitlements
-from .routers import admin, auth, creators as creators_api, downloads as downloads_api, themes as themes_api, discord as discord_api
+from .routers import admin, auth, creators as creators_api, downloads as downloads_api, themes as themes_api, discord as discord_api, launcher as launcher_api
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -33,7 +33,8 @@ async def security_middleware(request: Request, call_next):
             from urllib.parse import urlsplit
             origin_host = urlsplit(origin).netloc.lower()
             request_host = request.headers.get("host", "").lower()
-            if not origin_host or origin_host != request_host:
+            tauri_origin = origin_host in {"tauri.localhost", "localhost", "127.0.0.1"}
+            if not origin_host or (origin_host != request_host and not tauri_origin):
                 from fastapi.responses import JSONResponse
                 return JSONResponse({"detail": "Cross-origin request blocked."}, status_code=403)
 
@@ -158,6 +159,11 @@ async def startup() -> None:
             with engine.begin() as conn:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {name} {definition}"))
 
+    redeem_columns = {column["name"] for column in inspect(engine).get_columns("redeem_codes")}
+    if "redeemed_by_device_id" not in redeem_columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE redeem_codes ADD COLUMN redeemed_by_device_id VARCHAR(64)"))
+
     db = SessionLocal()
     try:
         # Backfill immutable auth identities and repair any legacy duplicate
@@ -193,6 +199,7 @@ async def startup() -> None:
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(discord_api.router, prefix="/api/auth", tags=["discord"])
+app.include_router(launcher_api.router, prefix="/api/launcher")
 app.include_router(creators_api.router, prefix="/api/creators", tags=["creators"])
 app.include_router(downloads_api.router, prefix="/api/downloads", tags=["downloads"])
 app.include_router(themes_api.router, prefix="/api/themes", tags=["themes"])
