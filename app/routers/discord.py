@@ -353,6 +353,78 @@ def launcher_me(request: Request):
         user = db.query(User).filter(User.auth_id == payload["auth_id"]).first()
         if not user or int(user.auth_version or 1) != int(payload["auth_version"]):
             raise HTTPException(status_code=401, detail="Horizon account session is no longer valid.")
-        return {"authenticated": True, **_public_user(user)}
+
+        guild_id = _env("DISCORD_GUILD_ID", True)
+        bot_token = _env("DISCORD_BOT_TOKEN", True)
+        if not user.discord_id:
+            raise HTTPException(status_code=403, detail="Discord account is not linked.")
+
+        try:
+            member = _discord_request(
+                f"{DISCORD_API}/guilds/{guild_id}/members/{user.discord_id}",
+                bot_token=bot_token,
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=403, detail="Unable to verify Discord server membership and roles.") from exc
+
+        roles = {str(role) for role in member.get("roles", [])}
+        role_ids = {
+            "donator": "1554117251458801754",
+            "corrupted_donator": "1554117420589908078",
+            "aria_donator": "1554117573862498454",
+            "creator": "1554117678996922488",
+            "beta": "1554117795334197278",
+        }
+        new_donation_cents = (
+            1000 if role_ids["aria_donator"] in roles
+            else 500 if role_ids["corrupted_donator"] in roles
+            else 100 if role_ids["donator"] in roles
+            else 0
+        )
+        new_creator_badge = 1 if role_ids["creator"] in roles else 0
+        new_beta_access = 1 if role_ids["beta"] in roles else 0
+        entitlements_changed = (
+            int(getattr(user, "donation_cents", 0) or 0) != new_donation_cents
+            or int(getattr(user, "creator_badge", 0) or 0) != new_creator_badge
+            or int(getattr(user, "beta_access", 0) or 0) != new_beta_access
+        )
+        user.donation_cents = new_donation_cents
+        user.creator_badge = new_creator_badge
+        user.beta_access = new_beta_access
+        if entitlements_changed:
+            user.auth_version = int(user.auth_version or 1) + 1
+        db.commit()
+        db.refresh(user)
+
+        response = {"authenticated": True, **_public_user(user)}
+        if entitlements_changed:
+            response["access_token"] = create_access_token(
+                user.auth_id,
+                user.auth_version,
+                theme_entitlements(user),
+            )
+            response["expires_in"] = 900
+        return response
+    finally:
+        db.close()
+
+
+@router.post("/launcher/logout")
+def launcher_logout(request: Request):
+    authorization = request.headers.get("Authorization", "")
+    if not authorization.startswith("Bearer "):
+        return {"authenticated": False}
+
+    payload = decode_access_token(authorization[7:].strip())
+    if not payload:
+        return {"authenticated": False}
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.auth_id == payload["auth_id"]).first()
+        if user and int(user.auth_version or 1) == int(payload["auth_version"]):
+            user.auth_version = int(user.auth_version or 1) + 1
+            db.commit()
+        return {"authenticated": False}
     finally:
         db.close()
