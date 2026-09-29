@@ -305,10 +305,10 @@ async def creator(request: Request):
 @app.get("/download", response_class=HTMLResponse)
 async def download(request: Request):
     return page(request, "download.html", {
-        "version": "0.1.1",
+        "version": "0.1.5",
         "size": "12.1 MB",
         "system": "Windows 10 / 11",
-        "launcher_download_url": "/static/downloads/hzn_0.1.1_x64-setup.exe",
+        "launcher_download_url": "/static/downloads/hzn_0.1.5_x64-setup.exe",
         "steps": ["Download the installer", "Run the .exe", "Install Horizon Manager", "Open the launcher"],
     })
 
