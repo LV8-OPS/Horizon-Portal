@@ -15,11 +15,11 @@ def seed(db):
     theme_seed = [
         ("destiny2", "Destiny 2", "Default Horizon theme.", "free"),
         ("destiny1", "Destiny 1", "Destiny 1 art direction.", "free"),
-        ("hive", "Hive", "Donator theme from 1 €.", "donation_1"),
-        ("cabal", "Cabal", "Donator theme from 1 €.", "donation_1"),
-        ("fallen", "Fallen", "Donator theme from 1 €.", "donation_1"),
-        ("corrupted", "Corrupted", "Donator theme from 5 €.", "donation_5"),
-        ("aria", "Aria", "Donator theme from 10 €.", "donation_10"),
+        ("hive", "Hive", "Free Horizon theme.", "free"),
+        ("cabal", "Cabal", "Free Horizon theme.", "free"),
+        ("fallen", "Fallen", "Free Horizon theme.", "free"),
+        ("corrupted", "Corrupted", "Free Horizon theme.", "free"),
+        ("aria", "Aria", "Free Horizon theme.", "free"),
         ("vex", "Vex", "Creator badge only.", "creator"),
         ("beta", "BETA", "Beta players only.", "beta"),
     ]
@@ -42,33 +42,23 @@ def seed(db):
 THEME_ACCESS = {
     "destiny2": {"kind": "free", "min_donation": 0},
     "destiny1": {"kind": "free", "min_donation": 0},
-    "hive": {"kind": "donation", "min_donation": 100},
-    "cabal": {"kind": "donation", "min_donation": 100},
-    "fallen": {"kind": "donation", "min_donation": 100},
-    "corrupted": {"kind": "donation", "min_donation": 500},
-    "aria": {"kind": "donation", "min_donation": 1000},
+    "hive": {"kind": "free", "min_donation": 0},
+    "cabal": {"kind": "free", "min_donation": 0},
+    "fallen": {"kind": "free", "min_donation": 0},
+    "corrupted": {"kind": "free", "min_donation": 0},
+    "aria": {"kind": "free", "min_donation": 0},
     "vex": {"kind": "creator"},
     "beta": {"kind": "beta"},
 }
 
 
 def theme_entitlements(user: User | None) -> list[str]:
-    if not user:
-        return ["destiny2", "destiny1"]
-    donation = int(getattr(user, "donation_cents", 0) or 0)
-    access = ["destiny2", "destiny1"]
-    if donation >= 100:
-        access += ["hive", "cabal", "fallen"]
-    if donation >= 500:
-        access.append("corrupted")
-    if donation >= 1000:
-        access.append("aria")
-    if bool(getattr(user, "creator_badge", 0)):
+    access = ["destiny2", "destiny1", "hive", "cabal", "fallen", "corrupted", "aria"]
+    if user and bool(getattr(user, "creator_badge", 0)):
         access.append("vex")
-    if bool(getattr(user, "beta_access", 0)):
+    if user and bool(getattr(user, "beta_access", 0)):
         access.append("beta")
     return access
-
 
 def theme_access(user: User | None, slug: str) -> bool:
     return slug in theme_entitlements(user)
