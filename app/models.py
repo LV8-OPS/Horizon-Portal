@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, DateTime
 from .database import Base
+import uuid
 
 class Creator(Base):
     __tablename__ = "creators"
@@ -40,3 +41,28 @@ class User(Base):
     beta_access = Column(Integer, default=0, nullable=False)
     discord_id = Column(String(32), unique=True, index=True, nullable=True)
     discord_username = Column(String(255), default="", nullable=False)
+    # Immutable authentication identity. Tokens use this instead of the recyclable
+    # numeric primary key so a deleted account can never inherit an old token.
+    auth_id = Column(String(36), unique=True, index=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    auth_version = Column(Integer, default=1, nullable=False)
+
+class OAuthTransaction(Base):
+    __tablename__ = "oauth_transactions"
+    id = Column(Integer, primary_key=True, index=True)
+    state_hash = Column(String(64), unique=True, index=True, nullable=False)
+    mode = Column(String(20), nullable=False)
+    browser_nonce = Column(String(64), nullable=False)
+    code_verifier = Column(String(128), nullable=False)
+    launcher_code_challenge = Column(String(128), nullable=True)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)
+
+class LauncherAuthCode(Base):
+    __tablename__ = "launcher_auth_codes"
+    id = Column(Integer, primary_key=True, index=True)
+    code_hash = Column(String(64), unique=True, index=True, nullable=False)
+    auth_id = Column(String(36), nullable=False, index=True)
+    auth_version = Column(Integer, nullable=False)
+    code_challenge = Column(String(128), nullable=True)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)

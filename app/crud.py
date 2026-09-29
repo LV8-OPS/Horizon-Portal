@@ -29,13 +29,21 @@ def seed(db):
             db.add(Theme(slug=slug, title=title, description=description, unlock_type=unlock_type))
     import os
     admin_password = os.getenv("HORIZON_ADMIN_PASSWORD", "").strip()
-    if admin_password and not db.query(User).filter(User.username == "admin").first():
+    rotate_admin = os.getenv("HORIZON_ROTATE_ADMIN_PASSWORD", "").strip() == "1"
+    admin = db.query(User).filter(User.username == "admin").first()
+
+    if admin_password and not admin:
         db.add(User(
             email="admin@horizon.local",
             username="admin",
             password_hash=hash_password(admin_password),
             role="admin",
         ))
+    elif admin_password and rotate_admin and admin:
+        # Explicit one-time rotation for a previously deployed admin secret.
+        admin.password_hash = hash_password(admin_password)
+        admin.auth_version = int(admin.auth_version or 1) + 1
+
     db.commit()
 
 
@@ -89,6 +97,8 @@ def register_user(db, payload: dict):
     if existing:
         return None
 
+    # Public account creation is Discord-only. Keep this helper for legacy/admin
+    # tooling, but never expose it as a public account-creation path.
     user = User(
         email=email,
         username=username,
@@ -106,7 +116,11 @@ def authenticate_user(db, identifier: str, password: str):
     user = db.query(User).filter(
         or_(User.email == identifier.lower(), User.username == identifier)
     ).first()
-    if not user or not verify_password(password, user.password_hash):
+    # Discord-linked users must authenticate through Discord. This prevents a
+    # planted or previously known password from bypassing Discord identity/roles.
+    if not user or user.role != "admin":
+        return None
+    if not verify_password(password, user.password_hash):
         return None
     return user
 
@@ -120,6 +134,10 @@ def login_user(db, payload: dict):
 
 def get_user(db, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
+
+
+def get_user_by_auth_id(db, auth_id: str):
+    return db.query(User).filter(User.auth_id == auth_id).first()
 
 
 def _creator(item):
@@ -181,6 +199,8 @@ def update_entitlements(db, user_id: int, donation_cents: int | None = None, cre
         user.creator_badge = 1 if creator_badge else 0
     if beta_access is not None:
         user.beta_access = 1 if beta_access else 0
+    # Entitlement changes invalidate previously issued launcher/web tokens.
+    user.auth_version = int(user.auth_version or 1) + 1
     db.commit()
     db.refresh(user)
     return _public_user(user)

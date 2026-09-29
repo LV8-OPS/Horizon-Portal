@@ -1,22 +1,26 @@
+import base64
+import hashlib
+import json
 import os
 import secrets
+import traceback
+import urllib.error
 import urllib.parse
 import urllib.request
-import urllib.error
-import json
-import traceback
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import or_
 
 from ..database import SessionLocal
-from ..models import User
+from ..models import User, OAuthTransaction, LauncherAuthCode
 from ..crud import theme_entitlements, _public_user
 from ..security import create_access_token, decode_access_token, create_token, SESSION_COOKIE
 
 router = APIRouter()
-
 DISCORD_API = "https://discord.com/api/v10"
+OAUTH_COOKIE = "horizon_oauth_nonce"
 
 
 def _env(name: str, required: bool = False) -> str:
@@ -24,6 +28,10 @@ def _env(name: str, required: bool = False) -> str:
     if required and not value:
         raise RuntimeError(f"Missing environment variable: {name}")
     return value
+
+
+def _secure_cookie() -> bool:
+    return bool(os.getenv("VERCEL") or os.getenv("HORIZON_ENV", "").lower() == "production")
 
 
 def _discord_request(url: str, access_token: str | None = None, bot_token: str | None = None):
@@ -37,13 +45,14 @@ def _discord_request(url: str, access_token: str | None = None, bot_token: str |
         return json.loads(response.read().decode("utf-8"))
 
 
-def _exchange_code(code: str, redirect_uri: str):
+def _exchange_code(code: str, redirect_uri: str, code_verifier: str):
     client_id = _env("DISCORD_CLIENT_ID", True)
     client_secret = _env("DISCORD_CLIENT_SECRET", True)
     body = urllib.parse.urlencode({
         "grant_type": "authorization_code",
         "code": code,
         "redirect_uri": redirect_uri,
+        "code_verifier": code_verifier,
     }).encode()
     request = urllib.request.Request(
         f"{DISCORD_API}/oauth2/token",
@@ -51,115 +60,124 @@ def _exchange_code(code: str, redirect_uri: str):
         headers={
             "Content-Type": "application/x-www-form-urlencoded",
             "Accept": "application/json",
-            "User-Agent": "Horizon-Portal (https://horizon-portal-lv-8-e7ea.vercel.app, 1.0)",
+            "User-Agent": "Horizon-Portal/1.0",
         },
         method="POST",
     )
     auth = f"{client_id}:{client_secret}".encode()
-    import base64
     request.add_header("Authorization", "Basic " + base64.b64encode(auth).decode())
-
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="replace")
-        print("DISCORD OAUTH TOKEN ERROR")
-        print("HTTP STATUS:", exc.code)
-        print("RESPONSE:", error_body)
-        raise
-    except Exception as exc:
-        print("DISCORD OAUTH TOKEN REQUEST ERROR:", repr(exc))
-        traceback.print_exc()
-        raise
+        raise HTTPException(status_code=502, detail="Discord authorization failed.") from exc
 
 
-def _state_token(mode: str) -> str:
-    from jose import jwt
-    import time
-    secret = _env("SECRET_KEY", True)
-    return jwt.encode(
-        {
-            "type": "discord_oauth_state",
-            "mode": mode,
-            "nonce": secrets.token_urlsafe(24),
-            "exp": int(time.time()) + 600,
-        },
-        secret,
-        algorithm="HS256",
-    )
+def _pkce_challenge(verifier: str) -> str:
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
 
 
-def _validate_state(state: str):
-    from jose import jwt, JWTError
-    try:
-        payload = jwt.decode(state, _env("SECRET_KEY", True), algorithms=["HS256"])
-        if payload.get("type") != "discord_oauth_state":
-            return None
-        return payload
-    except JWTError:
-        return None
+def _hash_value(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def _launcher_redirect(access_token: str) -> str:
-    return "horizon://auth?" + urllib.parse.urlencode({"access_token": access_token})
-
-
+def _new_launcher_code() -> str:
+    return secrets.token_urlsafe(32)
 @router.get("/discord/start")
-def discord_start(mode: str = "launcher"):
+def discord_start(request: Request, mode: str = "launcher", code_challenge: str = ""):
     if mode not in {"launcher", "web"}:
-        mode = "launcher"
+        raise HTTPException(status_code=400, detail="Invalid authentication mode.")
+    if mode == "launcher" and not code_challenge:
+        raise HTTPException(status_code=400, detail="Launcher PKCE challenge is required.")
+    if code_challenge and len(code_challenge) > 128:
+        raise HTTPException(status_code=400, detail="Invalid PKCE challenge.")
+
     client_id = _env("DISCORD_CLIENT_ID", True)
     redirect_uri = _env("DISCORD_REDIRECT_URI", True)
-    scopes = "identify guilds"
+    state = secrets.token_urlsafe(32)
+    browser_nonce = secrets.token_urlsafe(32)
+    code_verifier = secrets.token_urlsafe(48)
+
+    db = SessionLocal()
+    try:
+        db.query(OAuthTransaction).filter(
+            OAuthTransaction.expires_at < datetime.utcnow()
+        ).delete(synchronize_session=False)
+        db.add(OAuthTransaction(
+            state_hash=_hash_value(state),
+            mode=mode,
+            browser_nonce=browser_nonce,
+            code_verifier=code_verifier,
+            launcher_code_challenge=code_challenge or None,
+            expires_at=datetime.utcnow() + timedelta(minutes=10),
+        ))
+        db.commit()
+    finally:
+        db.close()
+
     params = {
         "response_type": "code",
         "client_id": client_id,
-        "scope": scopes,
+        "scope": "identify guilds",
         "redirect_uri": redirect_uri,
-        "state": _state_token(mode),
+        "state": state,
+        "code_challenge": _pkce_challenge(code_verifier),
+        "code_challenge_method": "S256",
     }
-    return RedirectResponse(
+    response = RedirectResponse(
         "https://discord.com/oauth2/authorize?" + urllib.parse.urlencode(params),
         status_code=302,
     )
+    response.set_cookie(
+        OAUTH_COOKIE,
+        browser_nonce,
+        max_age=600,
+        httponly=True,
+        samesite="lax",
+        secure=_secure_cookie(),
+        path="/api/auth/discord/callback",
+    )
+    return response
 
 
 @router.get("/discord/callback")
-def discord_callback(code: str = "", state: str = ""):
-    state_payload = _validate_state(state)
-    if not code or not state_payload:
+def discord_callback(request: Request, code: str = "", state: str = ""):
+    if not code or not state:
         raise HTTPException(status_code=400, detail="Invalid Discord authorization.")
 
+    db = SessionLocal()
+    try:
+        transaction = db.query(OAuthTransaction).filter(
+            OAuthTransaction.state_hash == _hash_value(state)
+        ).first()
+        if not transaction or transaction.used_at or transaction.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="Expired or already used authorization.")
+        if request.cookies.get(OAUTH_COOKIE) != transaction.browser_nonce:
+            raise HTTPException(status_code=400, detail="Authorization must be completed in the same browser.")
+        # Consume state before the external exchange so it cannot be replayed.
+        transaction.used_at = datetime.utcnow()
+        db.commit()
+        mode = transaction.mode
+        code_verifier = transaction.code_verifier
+        launcher_code_challenge = transaction.launcher_code_challenge
+    finally:
+        db.close()
+
     redirect_uri = _env("DISCORD_REDIRECT_URI", True)
-
     try:
-        token_data = _exchange_code(code, redirect_uri)
+        token_data = _exchange_code(code, redirect_uri, code_verifier)
         discord_token = token_data["access_token"]
-    except urllib.error.HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="replace")
-        print("DISCORD OAUTH CALLBACK HTTP ERROR:", exc.code, error_body)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Discord token exchange failed ({exc.code}): {error_body[:500]}",
-        ) from exc
-    except Exception as exc:
-        print("DISCORD OAUTH CALLBACK ERROR:", repr(exc))
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=502,
-            detail=f"Discord OAuth error: {type(exc).__name__}: {str(exc)[:300]}",
-        ) from exc
-
-    try:
         discord_user = _discord_request(
             f"{DISCORD_API}/users/@me",
             access_token=discord_token,
         )
+    except HTTPException:
+        raise
     except Exception as exc:
-        print("DISCORD USER API ERROR:", repr(exc))
+        print("DISCORD OAUTH ERROR:", repr(exc))
         traceback.print_exc()
-        raise HTTPException(status_code=502, detail="Discord user lookup failed.") from exc
+        raise HTTPException(status_code=502, detail="Unable to complete Discord authentication.") from exc
 
     guild_id = _env("DISCORD_GUILD_ID", True)
     bot_token = _env("DISCORD_BOT_TOKEN")
@@ -170,113 +188,152 @@ def discord_callback(code: str = "", state: str = ""):
         "creator": "1554117678996922488",
         "beta": "1554117795334197278",
     }
-    role_names = {
-        "beta": "BETA",
-        "creator": "Creator",
-        "donator": "Donator",
-        "corrupted_donator": "Corrupted Donator",
-        "aria_donator": "Aria Donator",
-    }
 
-    roles = set()
-    role_name_set = set()
+    roles: set[str] = set()
+    role_verification = False
+
     if guild_id and bot_token:
         try:
             member = _discord_request(
                 f"{DISCORD_API}/guilds/{guild_id}/members/{discord_user['id']}",
                 bot_token=bot_token,
             )
-            roles = set(member.get("roles", []))
-            guild_roles = _discord_request(
-                f"{DISCORD_API}/guilds/{guild_id}/roles",
-                bot_token=bot_token,
-            )
-            role_names_by_id = {
-                str(role.get("id")): str(role.get("name", "")).strip()
-                for role in guild_roles
-            }
-            role_name_set = {
-                role_names_by_id[role_id]
-                for role_id in roles
-                if role_id in role_names_by_id
-            }
+            roles = {str(role) for role in member.get("roles", [])}
+            role_verification = True
         except Exception as exc:
             print("DISCORD ROLE VERIFICATION ERROR:", repr(exc))
-            traceback.print_exc()
             raise HTTPException(status_code=403, detail="Unable to verify Discord server roles.") from exc
     elif guild_id:
+        # Fail closed when the bot cannot verify roles. Membership alone never
+        # grants Creator/BETA access.
         try:
-            guilds = _discord_request(f"{DISCORD_API}/users/@me/guilds", access_token=discord_token)
+            guilds = _discord_request(
+                f"{DISCORD_API}/users/@me/guilds",
+                access_token=discord_token,
+            )
             if not any(str(g.get("id")) == guild_id for g in guilds):
                 raise HTTPException(status_code=403, detail="Your Discord account is not a member of the Horizon server.")
         except HTTPException:
             raise
         except Exception as exc:
-            print("DISCORD GUILD MEMBERSHIP ERROR:", repr(exc))
-            traceback.print_exc()
             raise HTTPException(status_code=502, detail="Unable to verify Discord server membership.") from exc
 
-    username = discord_user.get("global_name") or discord_user.get("username") or f"user-{discord_user['id']}"
-    username = username.strip()[:240] or f"user-{discord_user['id']}"
-    email = f"discord-{discord_user['id']}@horizon.local"
+    discord_id = str(discord_user["id"])
+    requested_username = (discord_user.get("global_name") or discord_user.get("username") or f"user-{discord_id}").strip()
+    requested_username = requested_username[:240] or f"user-{discord_id}"
+    email = f"discord-{discord_id}@horizon.local"
 
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.discord_id == str(discord_user["id"])).first()
+        # Discord identity is keyed only by immutable Discord ID. Never attach a
+        # Discord login to an existing account merely because names/emails match.
+        user = db.query(User).filter(User.discord_id == discord_id).first()
         if not user:
-            existing = db.query(User).filter(or_(User.email == email, User.username == username)).first()
-            if existing and existing.role == "admin":
-                username = f"{username}-{discord_user['id'][-6:]}"
-                existing = None
-            if existing:
-                user = existing
-            else:
-                user = User(
-                    email=email,
-                    username=username,
-                    password_hash=secrets.token_hex(32),
-                    role="user",
-                )
-                db.add(user)
+            username = requested_username
+            if db.query(User).filter(User.username == username).first():
+                username = f"{requested_username}-{discord_id[-8:]}"
+            if db.query(User).filter(User.email == email).first():
+                email = f"discord-{discord_id}-{secrets.token_hex(4)}@horizon.local"
 
-        user.discord_id = str(discord_user["id"])
-        user.discord_username = discord_user.get("username", "")
+            user = User(
+                email=email,
+                username=username,
+                password_hash=secrets.token_hex(48),
+                role="user",
+            )
+            db.add(user)
+            db.flush()
 
-        # Discord roles are the source of truth. Recompute entitlements on
-        # every login so a removed role also removes its Horizon access.
-        if guild_id and bot_token:
-            has_donator = role_ids["donator"] in roles
-            has_corrupted = role_ids["corrupted_donator"] in roles
-            has_aria = role_ids["aria_donator"] in roles
+        user.discord_id = discord_id
+        user.discord_username = str(discord_user.get("username", ""))[:255]
 
-            if has_aria:
-                user.donation_cents = 1000
-            elif has_corrupted:
-                user.donation_cents = 500
-            elif has_donator:
-                user.donation_cents = 100
-            else:
-                user.donation_cents = 0
-
+        if role_verification:
+            user.donation_cents = (
+                1000 if role_ids["aria_donator"] in roles
+                else 500 if role_ids["corrupted_donator"] in roles
+                else 100 if role_ids["donator"] in roles
+                else 0
+            )
             user.creator_badge = 1 if role_ids["creator"] in roles else 0
             user.beta_access = 1 if role_ids["beta"] in roles else 0
+        else:
+            user.donation_cents = 0
+            user.creator_badge = 0
+            user.beta_access = 0
 
         db.commit()
         db.refresh(user)
 
-        access_token = create_access_token(user.id, theme_entitlements(user))
-        if state_payload.get("mode") == "web":
+        if mode == "web":
             response = RedirectResponse("/account", status_code=303)
             response.set_cookie(
                 SESSION_COOKIE,
-                create_token(user.id),
-                max_age=60 * 60 * 24 * 30,
+                create_token(user.auth_id, user.auth_version),
+                max_age=7 * 24 * 3600,
                 httponly=True,
                 samesite="lax",
-                secure=True,
+                secure=_secure_cookie(),
+                path="/",
             )
             return response
-        return RedirectResponse(_launcher_redirect(access_token), status_code=302)
+
+        if not launcher_code_challenge:
+            raise HTTPException(status_code=400, detail="Launcher PKCE challenge is required.")
+
+        code_value = _new_launcher_code()
+        db.add(LauncherAuthCode(
+            code_hash=_hash_value(code_value),
+            auth_id=user.auth_id,
+            auth_version=user.auth_version,
+            code_challenge=launcher_code_challenge,
+            expires_at=datetime.utcnow() + timedelta(minutes=2),
+        ))
+        db.commit()
+
+        response = RedirectResponse(
+            "horizon://auth?" + urllib.parse.urlencode({"code": code_value}),
+            status_code=302,
+        )
+        response.delete_cookie(OAUTH_COOKIE, path="/api/auth/discord/callback")
+        return response
+    finally:
+        db.close()
+@router.post("/launcher/exchange")
+def launcher_exchange(payload: dict):
+    code = str(payload.get("code", "")).strip()
+    code_verifier = str(payload.get("code_verifier", "")).strip()
+    if not code or not code_verifier:
+        raise HTTPException(status_code=400, detail="Authorization code and verifier are required.")
+    if len(code_verifier) > 128:
+        raise HTTPException(status_code=400, detail="Invalid verifier.")
+
+    db = SessionLocal()
+    try:
+        item = db.query(LauncherAuthCode).filter(
+            LauncherAuthCode.code_hash == _hash_value(code)
+        ).first()
+        if not item or item.used_at or item.expires_at < datetime.utcnow():
+            raise HTTPException(status_code=401, detail="Authorization code expired or already used.")
+        if _pkce_challenge(code_verifier) != item.code_challenge:
+            raise HTTPException(status_code=401, detail="Invalid authorization verifier.")
+
+        user = db.query(User).filter(User.auth_id == item.auth_id).first()
+        if not user or int(user.auth_version or 1) != int(item.auth_version):
+            raise HTTPException(status_code=401, detail="Account session is no longer valid.")
+
+        item.used_at = datetime.utcnow()
+        db.commit()
+        access_token = create_access_token(
+            user.auth_id,
+            user.auth_version,
+            theme_entitlements(user),
+        )
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": 900,
+            "user": _public_user(user),
+        }
     finally:
         db.close()
 
@@ -293,10 +350,9 @@ def launcher_me(request: Request):
 
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.id == int(payload["user_id"])).first()
-        if not user:
-            raise HTTPException(status_code=401, detail="Horizon account not found.")
+        user = db.query(User).filter(User.auth_id == payload["auth_id"]).first()
+        if not user or int(user.auth_version or 1) != int(payload["auth_version"]):
+            raise HTTPException(status_code=401, detail="Horizon account session is no longer valid.")
         return {"authenticated": True, **_public_user(user)}
     finally:
         db.close()
-    

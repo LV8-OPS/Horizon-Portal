@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import Any
+import os
+import uuid
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -8,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 
 from .database import Base, SessionLocal, engine
 from . import models
-from .crud import seed, authenticate_user, get_user, register_user
+from .crud import seed, authenticate_user, get_user, get_user_by_auth_id, register_user
 from sqlalchemy import text
 
 from .security import SESSION_COOKIE, create_token, decode_token, hash_password, verify_password
@@ -20,6 +22,29 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 
 app = FastAPI(title="Horizon Portal", version="1.0.0")
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    # Block cross-origin state-changing browser requests when Origin is present.
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        origin = request.headers.get("origin")
+        if origin:
+            from urllib.parse import urlsplit
+            origin_host = urlsplit(origin).netloc.lower()
+            request_host = request.headers.get("host", "").lower()
+            if not origin_host or origin_host != request_host:
+                from fastapi.responses import JSONResponse
+                return JSONResponse({"detail": "Cross-origin request blocked."}, status_code=403)
+
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
+
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
@@ -115,20 +140,52 @@ TEXT = {
 @app.on_event("startup")
 async def startup() -> None:
     Base.metadata.create_all(bind=engine)
-    with engine.begin() as conn:
-        columns = {row[1] for row in conn.execute(text("PRAGMA table_info(users)"))}
-        if "donation_cents" not in columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN donation_cents INTEGER NOT NULL DEFAULT 0"))
-        if "creator_badge" not in columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN creator_badge INTEGER NOT NULL DEFAULT 0"))
-        if "beta_access" not in columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN beta_access INTEGER NOT NULL DEFAULT 0"))
-        if "discord_id" not in columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN discord_id VARCHAR(32)"))
-        if "discord_username" not in columns:
-            conn.execute(text("ALTER TABLE users ADD COLUMN discord_username VARCHAR(255) NOT NULL DEFAULT ''"))
+
+    # Lightweight schema migration that works for both SQLite and PostgreSQL.
+    from sqlalchemy import inspect
+    columns = {column["name"] for column in inspect(engine).get_columns("users")}
+    additions = {
+        "donation_cents": "INTEGER NOT NULL DEFAULT 0",
+        "creator_badge": "INTEGER NOT NULL DEFAULT 0",
+        "beta_access": "INTEGER NOT NULL DEFAULT 0",
+        "discord_id": "VARCHAR(32)",
+        "discord_username": "VARCHAR(255) NOT NULL DEFAULT ''",
+        "auth_id": "VARCHAR(36)",
+        "auth_version": "INTEGER NOT NULL DEFAULT 1",
+    }
+    for name, definition in additions.items():
+        if name not in columns:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {name} {definition}"))
+
     db = SessionLocal()
     try:
+        # Backfill immutable auth identities and repair any legacy duplicate
+        # Discord identities before enforcing uniqueness.
+        users = db.query(models.User).order_by(models.User.id.asc()).all()
+        seen_discord = set()
+        for user in users:
+            if not user.auth_id:
+                user.auth_id = str(uuid.uuid4())
+            if not user.auth_version:
+                user.auth_version = 1
+            if user.discord_id:
+                discord_id = str(user.discord_id)
+                if discord_id in seen_discord:
+                    user.discord_id = None
+                    user.discord_username = ""
+                else:
+                    seen_discord.add(discord_id)
+        db.commit()
+
+        with engine.begin() as conn:
+            conn.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_auth_id ON users (auth_id)"
+            ))
+            conn.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_discord_id ON users (discord_id)"
+            ))
+
         seed(db)
     finally:
         db.close()
@@ -155,13 +212,15 @@ def current_user(request: Request):
     token = request.cookies.get(SESSION_COOKIE)
     if not token:
         return None
-    user_id = decode_token(token)
-    if user_id is None:
+    payload = decode_token(token)
+    if not payload:
         return None
     db = SessionLocal()
     try:
-        user = get_user(db, user_id)
+        user = get_user_by_auth_id(db, payload["auth_id"])
         if not user:
+            return None
+        if int(user.auth_version or 1) != int(payload["auth_version"]):
             return None
         return {
             "id": user.id,
@@ -208,7 +267,7 @@ async def health() -> dict[str, str]:
 async def api_me(request: Request):
     user = current_user(request)
     if not user:
-        return {"authenticated": False, "theme_entitlements": ["destiny2", "destiny1"]}
+        return {"authenticated": False, "theme_entitlements": ["destiny2", "destiny1", "hive", "cabal", "fallen", "corrupted", "aria"]}
     return {"authenticated": True, **user}
 
 
@@ -300,6 +359,8 @@ async def change_password(
         if not user or not verify_password(current_password, user.password_hash):
             return page(request, "settings.html", {"password_message": "Le mot de passe actuel est incorrect."})
         user.password_hash = hash_password(new_password)
+        # Changing the password revokes every previously copied token.
+        user.auth_version = int(user.auth_version or 1) + 1
         db.commit()
     finally:
         db.close()
@@ -343,12 +404,20 @@ async def login_submit(request: Request, identifier: str = Form(...), password: 
         user = authenticate_user(db, identifier, password)
         if not user:
             return page(request, "login.html", {"next": next, "error": "Identifiants incorrects."})
-        token = create_token(user.id)
+        token = create_token(user.auth_id, user.auth_version)
     finally:
         db.close()
     target = next if next.startswith("/") and not next.startswith("//") else "/account"
     response = RedirectResponse(url=target, status_code=303)
-    response.set_cookie(SESSION_COOKIE, token, max_age=7 * 24 * 3600, httponly=True, samesite="lax", secure=False, path="/")
+    response.set_cookie(
+        SESSION_COOKIE,
+        token,
+        max_age=7 * 24 * 3600,
+        httponly=True,
+        samesite="lax",
+        secure=bool(os.getenv("VERCEL") or os.getenv("HORIZON_ENV", "").lower() == "production"),
+        path="/",
+    )
     return response
 
 
@@ -504,14 +573,20 @@ async def horizon_register_page(request: Request):
 
 @app.post("/logout")
 async def horizon_logout(request: Request):
-    response = RedirectResponse(
-        url="/login",
-        status_code=303
-    )
+    token = request.cookies.get(SESSION_COOKIE)
+    if token:
+        payload = decode_token(token)
+        if payload:
+            db = SessionLocal()
+            try:
+                user = get_user_by_auth_id(db, payload["auth_id"])
+                if user and int(user.auth_version or 1) == int(payload["auth_version"]):
+                    # Version bump revokes every copied web/launcher token for this account.
+                    user.auth_version = int(user.auth_version or 1) + 1
+                    db.commit()
+            finally:
+                db.close()
 
-    response.delete_cookie(
-        key=SESSION_COOKIE,
-        path="/"
-    )
-
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie(key=SESSION_COOKIE, path="/")
     return response
