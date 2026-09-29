@@ -66,3 +66,12 @@ class LauncherAuthCode(Base):
     code_challenge = Column(String(128), nullable=True)
     expires_at = Column(DateTime, nullable=False)
     used_at = Column(DateTime, nullable=True)
+
+
+class RedeemCode(Base):
+    __tablename__ = "redeem_codes"
+    id = Column(Integer, primary_key=True, index=True)
+    code_hash = Column(String(64), unique=True, index=True, nullable=False)
+    entitlement = Column(String(100), nullable=False, default="beta")
+    redeemed_by_auth_id = Column(String(36), nullable=True, index=True)
+    redeemed_at = Column(DateTime, nullable=True)

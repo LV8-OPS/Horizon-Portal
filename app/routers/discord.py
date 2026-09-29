@@ -14,7 +14,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import or_
 
 from ..database import SessionLocal
-from ..models import User, OAuthTransaction, LauncherAuthCode
+from ..models import User, OAuthTransaction, LauncherAuthCode, RedeemCode
 from ..crud import theme_entitlements, _public_user
 from ..security import create_access_token, decode_access_token, create_token, SESSION_COOKIE
 
@@ -397,6 +397,68 @@ def launcher_me(request: Request):
             )
             response["expires_in"] = 900
         return response
+    finally:
+        db.close()
+
+
+@router.post("/launcher/redeem")
+def launcher_redeem(request: Request, payload: dict):
+    authorization = request.headers.get("Authorization", "")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Launcher authentication required.")
+
+    token_payload = decode_access_token(authorization[7:].strip())
+    if not token_payload:
+        raise HTTPException(status_code=401, detail="Launcher session expired.")
+
+    code = str(payload.get("code", "")).strip().upper()
+    if not code:
+        raise HTTPException(status_code=400, detail="Redeem code is required.")
+
+    code_hash = hashlib.sha256(code.encode("utf-8")).hexdigest()
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.auth_id == token_payload["auth_id"]).first()
+        if not user or int(user.auth_version or 1) != int(token_payload["auth_version"]):
+            raise HTTPException(status_code=401, detail="Launcher session expired.")
+
+        item = (
+            db.query(RedeemCode)
+            .filter(RedeemCode.code_hash == code_hash)
+            .with_for_update()
+            .first()
+        )
+        if not item:
+            raise HTTPException(status_code=404, detail="Invalid redeem code.")
+        if item.redeemed_by_auth_id:
+            if item.redeemed_by_auth_id == user.auth_id:
+                raise HTTPException(status_code=409, detail="This code has already been redeemed on this account.")
+            raise HTTPException(status_code=409, detail="This redeem code has already been used.")
+
+        if item.entitlement == "beta":
+            user.beta_access = 1
+            user.auth_version = int(user.auth_version or 1) + 1
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported redeem entitlement.")
+
+        item.redeemed_by_auth_id = user.auth_id
+        item.redeemed_at = datetime.utcnow()
+        db.commit()
+        db.refresh(user)
+
+        return {
+            "success": True,
+            "message": "BETA theme unlocked.",
+            "entitlement": item.entitlement,
+            "theme_entitlements": theme_entitlements(user),
+            "access_token": create_access_token(
+                user.auth_id,
+                user.auth_version,
+                theme_entitlements(user),
+            ),
+            **_public_user(user),
+        }
     finally:
         db.close()
 

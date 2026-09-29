@@ -1,6 +1,7 @@
 from sqlalchemy import or_
+from hashlib import sha256
 
-from .models import Creator, Download, Theme, User
+from .models import Creator, Download, Theme, User, RedeemCode
 from .security import hash_password, verify_password
 
 
@@ -43,6 +44,18 @@ def seed(db):
         # Explicit one-time rotation for a previously deployed admin secret.
         admin.password_hash = hash_password(admin_password)
         admin.auth_version = int(admin.auth_version or 1) + 1
+
+    beta_codes = [
+        "9f9a8236a22c1210e282a4431f49cb61f13e7b46e645d19eea767efff3d17cf4",
+        "6f8987b361c1aa0490af6eac6e263e6b115bc9b6dd9f081882313a5c3f4d1ab9",
+        "f4194ea22570ae92d332a48f1d1b1def157ee94a7cbe5fa36a27dfa96a785be8",
+        "fecc057507f2e7d07cd1a236f3d3d0bfa02a6e35f5519d6134c52c3fe0b674ca",
+        "5579c2c920778059f7e773a7a22bf6c499f057e61123e92d503372592d826a5a",
+        "28121e4dbe861f9e726e20c327ac776f85eaa2524da26798bfdda7bdb8dfdbba",
+    ]
+    for code_hash in beta_codes:
+        if not db.query(RedeemCode).filter(RedeemCode.code_hash == code_hash).first():
+            db.add(RedeemCode(code_hash=code_hash, entitlement="beta"))
 
     db.commit()
 
