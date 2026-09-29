@@ -252,7 +252,7 @@ def discord_callback(request: Request, code: str = "", state: str = ""):
                 else 0
             )
             user.creator_badge = 1 if role_ids["creator"] in roles else 0
-            user.beta_access = 1 if role_ids["beta"] in roles else 0
+            user.beta_access = 1 if role_ids["beta"] in roles else int(user.beta_access or 0)
             db.commit()
             db.refresh(user)
 
@@ -374,7 +374,7 @@ def launcher_me(request: Request):
             else 0
         )
         new_creator_badge = 1 if role_ids["creator"] in roles else 0
-        new_beta_access = 1 if role_ids["beta"] in roles else 0
+        new_beta_access = 1 if role_ids["beta"] in roles else int(user.beta_access or 0)
         entitlements_changed = (
             int(getattr(user, "donation_cents", 0) or 0) != new_donation_cents
             or int(getattr(user, "creator_badge", 0) or 0) != new_creator_badge
