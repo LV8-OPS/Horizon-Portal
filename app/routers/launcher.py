@@ -79,7 +79,7 @@ def mod_request(payload: dict):
     file_name = str(payload.get("file_name", "")).strip()
     file_size = int(payload.get("file_size", 0) or 0)
 
-    if not device_id or not title or game not in {"destiny2", "dawn", "sunrise"}:
+    if not device_id or not title or game not in {"destiny2", "dawn", "sunrise", "sundial"}:
         raise HTTPException(status_code=400, detail="Creator request data is incomplete.")
     if len(title) > 255 or len(description) > 5000 or len(file_name) > 255:
         raise HTTPException(status_code=400, detail="One or more fields are too long.")
