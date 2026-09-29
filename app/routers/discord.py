@@ -303,7 +303,7 @@ def launcher_exchange(payload: dict):
     try:
         item = db.query(LauncherAuthCode).filter(
             LauncherAuthCode.code_hash == _hash_value(code)
-        ).first()
+        ).with_for_update().first()
         if not item or item.used_at or item.expires_at < datetime.utcnow():
             raise HTTPException(status_code=401, detail="Authorization code expired or already used.")
         if _pkce_challenge(code_verifier) != item.code_challenge:
