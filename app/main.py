@@ -311,17 +311,19 @@ async def change_password(
 async def themes(request: Request):
     user_data = current_user(request)
     theme_catalog = [
-        {"slug": "destiny2", "title": "Destiny 2", "requirement": "Free"},
-        {"slug": "destiny1", "title": "Destiny 1", "requirement": "Free"},
-        {"slug": "hive", "title": "Hive", "requirement": "Donator ≥ 1 €"},
-        {"slug": "cabal", "title": "Cabal", "requirement": "Donator ≥ 1 €"},
-        {"slug": "fallen", "title": "Fallen", "requirement": "Donator ≥ 1 €"},
-        {"slug": "corrupted", "title": "Corrupted", "requirement": "Donator ≥ 5 €"},
-        {"slug": "aria", "title": "Aria", "requirement": "Donator ≥ 10 €"},
+        {"slug": "destiny2", "title": "Destiny 2", "requirement": ""},
+        {"slug": "destiny1", "title": "Destiny 1", "requirement": ""},
+        {"slug": "hive", "title": "Hive", "requirement": ""},
+        {"slug": "cabal", "title": "Cabal", "requirement": ""},
+        {"slug": "fallen", "title": "Fallen", "requirement": ""},
+        {"slug": "corrupted", "title": "Corrupted", "requirement": ""},
+        {"slug": "aria", "title": "Aria", "requirement": ""},
         {"slug": "vex", "title": "Vex", "requirement": "Creator only"},
         {"slug": "beta", "title": "BETA", "requirement": "Beta players only"},
     ]
-    allowed = set(user_data["theme_entitlements"]) if user_data else {"destiny2", "destiny1"}
+    allowed = set(user_data["theme_entitlements"]) if user_data else {
+        "destiny2", "destiny1", "hive", "cabal", "fallen", "corrupted", "aria"
+    }
     for theme in theme_catalog:
         theme["unlocked"] = theme["slug"] in allowed
     return page(request, "themes.html", {"themes": theme_catalog, "theme_entitlements": list(allowed)})
