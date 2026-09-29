@@ -119,7 +119,9 @@ def discord_start(request: Request, mode: str = "launcher", code_challenge: str 
     params = {
         "response_type": "code",
         "client_id": client_id,
-        "scope": "identify guilds",
+        # The launcher only needs the Discord identity OAuth scope.
+        # Guild membership/roles are verified server-side with the bot token.
+        "scope": "identify",
         "redirect_uri": redirect_uri,
         "state": state,
         "code_challenge": _pkce_challenge(code_verifier),
