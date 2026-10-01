@@ -108,6 +108,32 @@
       grid.get(key).push(p);
     }
 
+    // Mouse network: particles near the cursor visibly connect to it.
+    if (state.mouse.active) {
+      const mouseRadius = Math.max(cfg.radius, 170);
+      ctx.lineWidth = 0.7;
+
+      for (const p of state.particles) {
+        const dx = state.mouse.x - p.x;
+        const dy = state.mouse.y - p.y;
+        const distance = Math.hypot(dx, dy);
+
+        if (distance < mouseRadius) {
+          const opacity = (1 - distance / mouseRadius) * 0.34;
+          ctx.strokeStyle = "rgba(240,212,119," + opacity + ")";
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(state.mouse.x, state.mouse.y);
+          ctx.stroke();
+        }
+      }
+
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(240,212,119,0.9)";
+      ctx.arc(state.mouse.x, state.mouse.y, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     ctx.lineWidth = 0.55;
 
     for (const p of state.particles) {
