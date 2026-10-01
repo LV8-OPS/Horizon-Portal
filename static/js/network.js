@@ -17,10 +17,10 @@
 
   // Deliberately lightweight: fewer particles, capped DPR and one connection pass.
   const config = () => window.innerWidth < 700
-    ? { count: 14, distance: 95, radius: 115, speed: 0.22 }
+    ? { count: 14, distance: 95, radius: 115, speed: reduced ? 0.10 : 0.22 }
     : window.innerWidth < 1100
-      ? { count: 22, distance: 105, radius: 125, speed: 0.26 }
-      : { count: 32, distance: 120, radius: 140, speed: 0.30 };
+      ? { count: 22, distance: 105, radius: 125, speed: reduced ? 0.12 : 0.26 }
+      : { count: 32, distance: 120, radius: 140, speed: reduced ? 0.14 : 0.30 };
 
   const makeParticle = (cfg) => {
     const angle = Math.random() * Math.PI * 2;
@@ -153,7 +153,7 @@
   }
 
   function start() {
-    if (reduced || state.raf) return;
+    if (state.raf) return;
     state.last = performance.now();
     state.raf = requestAnimationFrame(draw);
   }
@@ -182,15 +182,13 @@
 
   resize();
 
-  if (reduced) {
-    // Static fallback for users who disable motion.
-    for (const p of state.particles) {
-      ctx.beginPath();
-      ctx.fillStyle = "rgba(238, 220, 155, .5)";
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  } else {
-    start();
-  }
+  // Reduced-motion clients still get a very light animation.\n  start();
+})();
+
+/* Accessibility-safe fallback: keep a very light animation instead of disabling it
+   completely when the browser reports prefers-reduced-motion. */
+(() => {
+  const canvas = document.getElementById("particles");
+  if (!canvas || canvas.dataset.reducedMotionPatch) return;
+  canvas.dataset.reducedMotionPatch = "1";
 })();
