@@ -31,6 +31,7 @@
     state.particles = Array.from({ length: config().count }, particle);
   }
 
+  let animationId = 0;
   function frame() {
     const cfg = config();
     ctx.clearRect(0, 0, state.width, state.height);
@@ -77,10 +78,17 @@
       }
     }
 
-    if (!reduced) requestAnimationFrame(frame);
+    if (!reduced && !document.hidden) animationId = requestAnimationFrame(frame);
+  }
+
+  function restartAnimation() {
+    if (reduced || document.hidden) return;
+    cancelAnimationFrame(animationId);
+    animationId = requestAnimationFrame(frame);
   }
 
   window.addEventListener("resize", resize, { passive: true });
+  document.addEventListener("visibilitychange", restartAnimation);
   window.addEventListener("mousemove", (event) => {
     state.mouse.x = event.clientX;
     state.mouse.y = event.clientY;

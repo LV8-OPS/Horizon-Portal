@@ -1,52 +1,99 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero">
-  <div>
-    <p class="eyebrow gold-shimmer">{{ t('slogan') }}</p>
-    <h1>{{ t('welcome') }}</h1>
-    <p class="hero-lead">{{ t('subtitle') }}</p>
-    <p class="hero-copy">Discover · Install · Manage · Play.</p>
+<section class="hero hero-home">
+  <div class="hero-copy-wrap">
+    <p class="eyebrow gold-shimmer">HORIZON PORTAL · COMMUNITY PROJECT</p>
+    <h1>Build. Discover. Install. Play.</h1>
+    <p class="hero-lead">Horizon Portal centralise l’écosystème de modding autour de Destiny 2, avec un Workshop communautaire, un espace Creator, une Library et Horizon Manager pour gérer les contenus.</p>
+    <p class="hero-copy">SunRise · Dawn · Community Mods · Horizon Manager</p>
     <div class="hero-actions">
-      <a class="btn gold-shimmer" href="/download">{{ t('download_btn') }}</a>
-      <a class="btn btn-secondary" href="/workshop">{{ t('explore') }}</a>
+      <a class="btn gold-shimmer" href="/download">Download Horizon Manager</a>
+      <a class="btn btn-secondary" href="/workshop">Explore Workshop</a>
     </div>
+    <div class="release-line"><span class="release-dot"></span><strong>PUBLIC RELEASE</strong><span>06.10 · 19:00 CET</span></div>
   </div>
-  <aside class="hero-aside">
-    <div class="stat-card"><span class="stat-label">Focus</span><strong>Destiny 2 Modded</strong><p>SunRise, Dawn and future community projects.</p></div>
-    <div class="stat-card"><span class="stat-label">Workflow</span><strong>Discover → Install</strong><p>Everything starts from one centralized portal.</p></div>
+  <aside class="hero-aside hero-status">
+    <div class="stat-card"><span class="stat-label">HORIZON MANAGER</span><strong>Community Content Manager</strong><p>Installer, organiser et retrouver les projets Horizon depuis une interface unique.</p></div>
+    <div class="stat-card"><span class="stat-label">STATUS</span><strong>Private → Public</strong><p>Le lancement public est prévu le 6 octobre 2026 à 19h CET.</p></div>
   </aside>
 </section>
 
-<section class="panel panel-stack">
-  <div class="section-head"><p class="section-kicker">HORIZON PORTAL</p><h2>{{ t('what_is') }}</h2></div>
+<section class="panel panel-stack intro-panel">
+  <div class="section-head"><p class="section-kicker">WHAT IS HORIZON?</p><h2>Un portail pensé pour que le contenu ne se perde plus dans 47 salons Discord.</h2></div>
   <div class="two-col">
-    <p class="long-copy">{{ t('what_is_desc') }}</p>
+    <p class="long-copy">Horizon Portal veut devenir un point d’entrée clair pour les joueurs et les développeurs qui créent du contenu pour Dawn et SunRise. Le projet rassemble découverte, présentation, publication et gestion des mods, sans remplacer les projets auxquels il se rattache.</p>
     <div class="highlight-list">
-      <div class="highlight-item"><span>01</span><p>Centralized workshop instead of scattered links.</p></div>
-      <div class="highlight-item"><span>02</span><p>Clear project information and compatibility.</p></div>
-      <div class="highlight-item"><span>03</span><p>Creators, players and community in one place.</p></div>
+      <div class="highlight-item"><span>01</span><p><strong>Discover</strong><br>Explorer des projets et comprendre rapidement leur contenu.</p></div>
+      <div class="highlight-item"><span>02</span><p><strong>Install</strong><br>Retrouver Horizon Manager et les informations nécessaires à l’installation.</p></div>
+      <div class="highlight-item"><span>03</span><p><strong>Create</strong><br>Donner de la visibilité aux développeurs et à leurs créations.</p></div>
     </div>
   </div>
 </section>
 
 <section class="panel panel-stack">
-  <div class="section-head"><p class="section-kicker">PLAYER EXPERIENCE</p><h2>Built around the useful part.</h2></div>
+  <div class="section-head"><p class="section-kicker">HORIZON MANAGER</p><h2>Le logiciel, en vrai.</h2><p class="long-copy">Les captures ci-dessous proviennent directement de la version actuelle d’Horizon Manager. Pas une maquette inventée pour faire joli, cette fois.</p></div>
+  <figure class="screen-feature"><img src="/static/img/screens/01-desktop.png" alt="Horizon Manager interface principale"><figcaption>Interface principale · Horizon Manager</figcaption></figure>
+  <div class="screen-grid">
+    <figure class="screen-card"><img src="/static/img/screens/01-home.png" alt="Horizon Manager Home"><figcaption><strong>Home</strong><span>Point d’entrée du launcher</span></figcaption></figure>
+    <figure class="screen-card"><img src="/static/img/screens/02-workshop.png" alt="Horizon Manager Workshop"><figcaption><strong>Workshop</strong><span>Découverte des contenus communautaires</span></figcaption></figure>
+    <figure class="screen-card"><img src="/static/img/screens/03-library.png" alt="Horizon Manager Library"><figcaption><strong>Library</strong><span>Organisation des projets installés</span></figcaption></figure>
+    <figure class="screen-card"><img src="/static/img/screens/04-downloads.png" alt="Horizon Manager Downloads"><figcaption><strong>Downloads</strong><span>Gestion des téléchargements</span></figcaption></figure>
+    <figure class="screen-card"><img src="/static/img/screens/05-themes.png" alt="Horizon Manager Themes"><figcaption><strong>Themes</strong><span>Personnalisation de l’expérience</span></figcaption></figure>
+    <figure class="screen-card"><img src="/static/img/screens/06-settings.png" alt="Horizon Manager Settings"><figcaption><strong>Settings</strong><span>Configuration du launcher</span></figcaption></figure>
+    <figure class="screen-card"><img src="/static/img/screens/07-tools.png" alt="Horizon Manager Tools"><figcaption><strong>Tools</strong><span>Outils Horizon</span></figcaption></figure>
+    <figure class="screen-card"><img src="/static/img/screens/08-account.png" alt="Horizon Manager Account"><figcaption><strong>Account</strong><span>Gestion du profil et des accès</span></figcaption></figure>
+  </div>
+</section><section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">WORKSHOP</p><h2>Un catalogue communautaire qui met les créateurs au centre.</h2></div>
   <div class="grid-4">
-    <article class="info-card"><h3>Browse</h3><p>Find projects through a structured workshop.</p></article>
-    <article class="info-card"><h3>Inspect</h3><p>See creator, version, compatibility and updates.</p></article>
-    <article class="info-card"><h3>Install</h3><p>Follow a simple installation path instead of hunting through Discord.</p></article>
-    <article class="info-card"><h3>Play</h3><p>Keep the portal focused on getting you to the content.</p></article>
+    <article class="info-card"><span class="card-index">01</span><h3>Custom Weapons</h3><p>Armes avec modèles 3D, créations originales, armes de Destiny 1 et contenus plus récents.</p></article>
+    <article class="info-card"><span class="card-index">02</span><h3>Custom Missions</h3><p>Missions originales, remakes d’assauts emblématiques et projets narratifs communautaires.</p></article>
+    <article class="info-card"><span class="card-index">03</span><h3>Large Projects</h3><p>Le Workshop pourra accueillir des projets ambitieux, jusqu’à des raids créés de zéro.</p></article>
+    <article class="info-card"><span class="card-index">04</span><h3>Creator Spotlight</h3><p>Les créations remarquées pourront être mises en avant régulièrement sur le portail.</p></article>
   </div>
 </section>
 
-<section class="panel panel-stack">
-  <div class="section-head"><p class="section-kicker">COMMUNITY</p><h2>Discord remains part of the ecosystem.</h2></div>
+<section class="panel panel-stack future-panel">
+  <div class="section-head"><p class="section-kicker">THE ROAD AHEAD</p><h2>Le futur du projet</h2></div>
+  <div class="roadmap">
+    <article class="roadmap-item active"><span>NOW</span><h3>Horizon Manager</h3><p>Launcher, Library, Workshop, Themes, Tools et gestion de compte.</p></article>
+    <article class="roadmap-item"><span>NEXT</span><h3>Creator Publishing</h3><p>Publication de projets par les créateurs, informations de version et suivi des mises à jour.</p></article>
+    <article class="roadmap-item"><span>CURATED</span><h3>Weekly Highlights</h3><p>Une sélection régulière des contenus remarqués pour donner de la visibilité aux meilleurs projets.</p></article>
+    <article class="roadmap-item"><span>COMMUNITY</span><h3>More Modding Content</h3><p>Davantage d’armes custom, missions, remakes et projets communautaires au fil du développement.</p></article>
+  </div>
+</section>
+
+<section class="panel panel-stack recruitment-panel">
+  <div class="section-head"><p class="section-kicker">DEVELOPERS WANTED</p><h2>Nous cherchons des créateurs de mods.</h2></div>
+  <div class="two-col">
+    <div>
+      <p class="long-copy">Horizon recherche activement des développeurs capables de créer du contenu pour Destiny Dawn et SunRise. Le projet veut mettre en avant du vrai travail de création, pas seulement des modifications superficielles.</p>
+      <div class="hero-actions"><a class="btn gold-shimmer" href="https://discord.gg/5W6ZqRvnNJ" target="_blank" rel="noreferrer">Join the Discord</a><a class="btn btn-secondary" href="/creators">Creator information</a></div>
+    </div>
+    <div class="highlight-list">
+      <div class="highlight-item"><span>01</span><p>Armes custom avec modèle 3D</p></div>
+      <div class="highlight-item"><span>02</span><p>Armes de Destiny 1 et contenus récents</p></div>
+      <div class="highlight-item"><span>03</span><p>Missions et assauts custom</p></div>
+      <div class="highlight-item"><span>04</span><p>Projets ambitieux, y compris raids originaux</p></div>
+    </div>
+  </div>
+</section><section class="panel panel-stack release-panel">
+  <div class="section-head"><p class="section-kicker">PUBLIC RELEASE</p><h2>06.10.2026 · 19:00 CET</h2><p class="long-copy">Le portail public ouvrira à cette date. Le bouton de téléchargement est déjà présent pour préparer l’expérience, mais l’installeur public n’est pas encore distribué.</p></div>
+  <div class="release-grid">
+    <div class="release-box"><span class="stat-label">DATE</span><strong>06 OCTOBRE 2026</strong><p>19:00 CET</p></div>
+    <div class="release-box"><span class="stat-label">PLATFORM</span><strong>WINDOWS</strong><p>Horizon Manager</p></div>
+    <div class="release-box"><span class="stat-label">ACCESS</span><strong>PUBLIC</strong><p>Ouverture du portail</p></div>
+  </div>
+</section>
+
+<section class="panel panel-stack community-panel">
+  <div class="section-head"><p class="section-kicker">COMMUNITY</p><h2>Discord reste le cœur humain du projet.</h2></div>
   <div class="steps">
     <div class="step"><strong>01</strong><p>Join Discord</p></div>
-    <div class="step"><strong>02</strong><p>Open a ticket</p></div>
-    <div class="step"><strong>03</strong><p>Present the project</p></div>
+    <div class="step"><strong>02</strong><p>Meet the team</p></div>
+    <div class="step"><strong>03</strong><p>Submit your project</p></div>
     <div class="step"><strong>04</strong><p>Project review</p></div>
-    <div class="step"><strong>05</strong><p>Publication</p></div>
+    <div class="step"><strong>05</strong><p>Workshop publication</p></div>
   </div>
 </section>
 {% endblock %}
