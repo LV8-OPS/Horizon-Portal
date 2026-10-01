@@ -302,20 +302,12 @@ async def workshop(request: Request):
 
 @app.get("/creators", response_class=HTMLResponse)
 async def creators(request: Request):
-    return page(request, "creators.html", {
-        "creators": [
-            {"name": "Dawn", "slug": "dawn", "description": "Dawn creator pack."},
-            {"name": "SunRise", "slug": "sunrise", "description": "SunRise creator pack."},
-        ]
-    })
+    return page(request, "creators.html")
 
 
-@app.get("/creator", response_class=HTMLResponse)
+@app.get("/creator")
 async def creator(request: Request):
-    return page(request, "creator.html", {
-        "steps": ["Join Discord", "Answer the questionnaire", "Submit your project", "Project review", "Publication"],
-        "types": ["Weapons", "D1 imports", "HUD changes", "Raid content", "Mission content", "Utilities"],
-    })
+    return RedirectResponse(url="/creators", status_code=303)
 
 
 @app.get("/download", response_class=HTMLResponse)
