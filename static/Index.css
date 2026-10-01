@@ -107,3 +107,146 @@ h3 { margin-bottom:8px; }
 
 .download-notice { margin-top:16px; color:var(--muted); font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
 button.btn { cursor:pointer; font:inherit; }
+/* Horizon Portal v2 landing redesign */
+body {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(212,175,55,.08), transparent 28%),
+    radial-gradient(circle at 85% 75%, rgba(74,96,140,.10), transparent 30%),
+    linear-gradient(180deg,#050608 0%,#090b10 48%,#050608 100%);
+}
+#particles {
+  z-index:0;
+  opacity:.9;
+  mix-blend-mode:screen;
+  filter:drop-shadow(0 0 4px rgba(212,175,55,.08));
+}
+.topbar,.shell,.footer { position:relative; z-index:2; }
+.hero,.panel {
+  backdrop-filter:blur(7px);
+}
+.hero-home {
+  min-height:620px;
+  background:
+    linear-gradient(120deg,rgba(18,20,27,.78),rgba(8,10,14,.66)),
+    radial-gradient(circle at 90% 20%,rgba(212,175,55,.10),transparent 35%);
+}
+.hero-copy-wrap { position:relative; z-index:2; }
+.hero-home h1 {
+  max-width:900px;
+  text-wrap:balance;
+}
+.hero-lead { max-width:800px; }
+.intro-panel { position:relative; overflow:hidden; }
+.intro-panel::before {
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(90deg,rgba(212,175,55,.035),transparent 45%);
+  pointer-events:none;
+}
+.manager-section { overflow:hidden; }
+.feature-row {
+  display:grid;
+  grid-template-columns:minmax(0,1.18fr) minmax(320px,.82fr);
+  align-items:center;
+  gap:clamp(28px,5vw,70px);
+  padding:42px 0;
+  border-top:1px solid var(--line);
+}
+.feature-row:first-of-type { border-top:0; padding-top:8px; }
+.feature-row-reverse { grid-template-columns:minmax(320px,.82fr) minmax(0,1.18fr); }
+.feature-row-reverse .feature-media { order:2; }
+.feature-row-reverse .feature-copy { order:1; }
+.feature-media {
+  position:relative;
+  padding:9px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(4,6,9,.72);
+  box-shadow:0 25px 70px rgba(0,0,0,.32);
+  overflow:hidden;
+}
+.feature-media::after {
+  content:"";
+  position:absolute; inset:0;
+  background:linear-gradient(135deg,rgba(212,175,55,.10),transparent 35%,transparent 70%,rgba(255,255,255,.025));
+  pointer-events:none;
+}
+.feature-media img {
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:16/9;
+  object-fit:cover;
+  transition:transform .5s ease,filter .5s ease;
+}
+.feature-row:hover .feature-media img {
+  transform:scale(1.018);
+  filter:brightness(1.04);
+}
+.feature-copy { max-width:520px; }
+.feature-number {
+  display:inline-block;
+  margin-bottom:13px;
+  color:var(--gold);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.18em;
+}
+.feature-copy h3 {
+  margin-bottom:13px;
+  font-size:clamp(25px,3vw,36px);
+  line-height:1.1;
+}
+.feature-copy p {
+  color:#b5bac4;
+  font-size:16px;
+}
+.feature-tags {
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:18px;
+}
+.feature-tags span {
+  padding:6px 10px;
+  border:1px solid rgba(212,175,55,.18);
+  border-radius:999px;
+  color:#d8dbe1;
+  background:rgba(212,175,55,.035);
+  font-size:11px;
+}
+.screen-feature,.screen-grid { display:none; }
+.manager-section .section-head { max-width:850px; }
+.info-card {
+  transition:transform .25s ease,border-color .25s ease,background .25s ease;
+}
+.info-card:hover {
+  transform:translateY(-4px);
+  border-color:rgba(212,175,55,.28);
+  background:rgba(212,175,55,.035);
+}
+.roadmap-item {
+  transition:background .25s ease,transform .25s ease;
+}
+.roadmap-item:hover {
+  background:#151821;
+  transform:translateY(-2px);
+}
+.release-panel {
+  background:
+    linear-gradient(135deg,rgba(212,175,55,.055),transparent 45%),
+    var(--panel);
+}
+.community-panel { margin-bottom:10px; }
+@media(max-width:900px){
+  .feature-row,.feature-row-reverse { grid-template-columns:1fr; gap:25px; padding:32px 0; }
+  .feature-row-reverse .feature-media,
+  .feature-row-reverse .feature-copy { order:initial; }
+  .feature-copy { max-width:none; }
+}
+@media(max-width:560px){
+  .hero-home { padding:25px 18px; }
+  .feature-row { padding:27px 0; }
+  .feature-media { padding:6px; }
+  .feature-copy h3 { font-size:27px; }
+  .feature-copy p { font-size:15px; }
+}
