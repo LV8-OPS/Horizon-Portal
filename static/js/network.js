@@ -18,9 +18,9 @@
   };
 
   function config() {
-    if (window.innerWidth < 700) return { count: 12, distance: 100, radius: 120, speed: 0.18 };
-    if (window.innerWidth < 1100) return { count: 18, distance: 110, radius: 130, speed: 0.21 };
-    return { count: 26, distance: 125, radius: 145, speed: 0.24 };
+    if (window.innerWidth < 700) return { count: 20, distance: 100, radius: 120, speed: 0.18 };
+    if (window.innerWidth < 1100) return { count: 30, distance: 110, radius: 130, speed: 0.21 };
+    return { count: 42, distance: 125, radius: 145, speed: 0.24 };
   }
 
   function createParticle(cfg) {
