@@ -58,7 +58,7 @@ async def security_middleware(request: Request, call_next):
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
-NAV = [("workshop", "/workshop"), ("creators", "/creators"), ("download", "/download"), ("account", "/account")]
+NAV = [("workshop", "/workshop"), ("creators", "/creators"), ("download", "/download")]
 
 TEXT = {
     "en": {
