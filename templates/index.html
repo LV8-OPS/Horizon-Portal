@@ -74,7 +74,12 @@
     <article class="info-card"><span class="card-index">03</span><h3>Custom Missions</h3><p>Create new missions, rebuild iconic strikes or experiment with completely original ideas.</p></article>
     <article class="info-card"><span class="card-index">04</span><h3>Large Projects</h3><p>Ambitious creators can work toward major projects, including raids built from the ground up.</p></article>
   </div>
-</section><section class="panel panel-stack future-panel">
+</section><section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">PROJECT OF THE WEEK</p><h2>One project worth opening.</h2></div>
+  {% if featured_project %}<div class="two-col"><div><span class="chip">{{ featured_project.category }}</span><h3>{{ featured_project.title }}</h3><p class="long-copy">{{ featured_project.description }}</p><div class="feature-tags"><span>v{{ featured_project.version }}</span><span>{{ featured_project.game }}</span><span>{{ featured_project.creator }}</span></div></div><div class="stat-card"><span class="stat-label">LATEST PUBLISHED PROJECT</span><strong>{{ featured_project.title }}</strong><p>Explore the full project page for its changelog, file information and SHA-256 digest.</p><a class="btn btn-secondary" href="/workshop/{{ featured_project.id }}">View project</a></div></div>{% else %}<div class="empty-state"><h3>Project of the Week will appear here.</h3><p>The first approved Workshop project becomes the featured project automatically.</p></div>{% endif %}
+</section>
+
+<section class="panel panel-stack future-panel">
   <div class="section-head"><p class="section-kicker">THE ROAD AHEAD</p><h2>What comes next.</h2></div>
   <div class="roadmap">
     <article class="roadmap-item active"><span>NOW</span><h3>Horizon Manager</h3><p>Launcher, Workshop, Library, Themes, Tools and Languages.</p></article>

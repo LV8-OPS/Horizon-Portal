@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow gold-shimmer">WORKSHOP · PROJECT</p>
+    <h1>{{ project.title }}</h1>
+    <p class="hero-lead">{{ project.description }}</p>
+    <div class="feature-tags"><span>{{ project.game }}</span><span>{{ project.category }}</span><span>v{{ project.version }}</span></div>
+  </div>
+</section>
+<section class="panel panel-stack">
+  <div class="two-col">
+    <div><p class="section-kicker">PROJECT INFORMATION</p><h2>{{ project.title }}</h2><p class="long-copy">{{ project.description }}</p></div>
+    <div class="release-grid">
+      <div class="release-box"><span class="stat-label">CREATOR</span><strong>{{ project.creator }}</strong><p>Community Creator</p></div>
+      <div class="release-box"><span class="stat-label">VERSION</span><strong>{{ project.version }}</strong><p>{{ project.game }}</p></div>
+      <div class="release-box"><span class="stat-label">FILE</span><strong>{{ project.file_name }}</strong><p>{{ project.file_size }} bytes</p></div>
+    </div>
+  </div>
+</section>
+<section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">CHANGELOG</p><h2>Release history</h2></div>
+  <div class="changelog"><article><span>v{{ project.version }}</span><div><h3>Current release</h3><p>{{ project.changelog or "No changelog was provided for this release." }}</p></div></article></div>
+</section>
+<section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">INTEGRITY</p><h2>Verify before installing.</h2><p class="long-copy">The published package has a SHA-256 digest so the file can be independently verified.</p></div>
+  <code class="hash-box">{{ project.sha256 or "SHA-256 unavailable" }}</code>
+  {% if project.download_url %}<div class="hero-actions"><a class="btn gold-shimmer" href="{{ project.download_url }}">Download project</a><a class="btn btn-secondary" href="/workshop">Back to Workshop</a></div>{% else %}<p class="meta">The download is currently unavailable.</p>{% endif %}
+</section>
+{% endblock %}

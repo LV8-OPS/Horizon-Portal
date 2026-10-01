@@ -1,6 +1,44 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero"><div><p class="eyebrow">Workshop</p><h1>{{ t('workshop_title') }}</h1><p class="hero-lead">A structured catalog for Destiny modded projects, built to make discovery less painful.</p></div></section>
-<section class="panel"><div class="section-head"><p class="section-kicker">DISCOVER</p><h2>Everything has a place.</h2></div><div class="cards">{% for f in features %}<article class="card"><h3>{{ f }}</h3><p>Designed to keep project information visible and easy to understand.</p></article>{% endfor %}</div></section>
-<section class="panel"><div class="section-head"><p class="section-kicker">CATEGORIES</p><h2>Filter by project type.</h2></div><div>{% for c in categories %}<span class="chip">{{ c }}</span>{% endfor %}</div></section>
+<section class="hero">
+  <div>
+    <p class="eyebrow gold-shimmer">HORIZON WORKSHOP</p>
+    <h1>Discover community projects.</h1>
+    <p class="hero-lead">Browse published projects with version, compatibility, creator, changelog and integrity information before you install anything.</p>
+  </div>
+</section>
+
+<section class="panel panel-stack">
+  <form class="workshop-toolbar" method="get" action="/workshop">
+    <input class="search-input" type="search" name="q" value="{{ search }}" placeholder="Search projects..." aria-label="Search projects">
+    <select class="filter-select" name="game" aria-label="Filter by environment">
+      <option value="">All environments</option>
+      {% for g in ["destiny2","dawn","sunrise","sundial"] %}<option value="{{ g }}" {% if game == g %}selected{% endif %}>{{ g|capitalize }}</option>{% endfor %}
+    </select>
+    <select class="filter-select" name="sort" aria-label="Sort projects">
+      <option value="newest" {% if sort != "oldest" %}selected{% endif %}>Newest</option>
+      <option value="oldest" {% if sort == "oldest" %}selected{% endif %}>Oldest</option>
+    </select>
+    <button class="btn gold-shimmer" type="submit">Search</button>
+  </form>
+</section>
+
+<section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">PUBLISHED PROJECTS</p><h2>{{ total }} projects</h2></div>
+  {% if items %}
+  <div class="workshop-grid">
+    {% for item in items %}
+    <article class="workshop-card">
+      <div class="workshop-card-top"><span class="chip">{{ item.category }}</span><span class="meta">{{ item.game }}</span></div>
+      <h3>{{ item.title }}</h3>
+      <p>{{ item.description }}</p>
+      <div class="workshop-meta"><span>v{{ item.version }}</span><span>{{ item.creator }}</span></div>
+      <a class="btn btn-secondary" href="/workshop/{{ item.id }}">View project</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><h3>No published projects yet.</h3><p>The Workshop is ready. Approved Creator releases will appear here automatically.</p><a class="btn btn-secondary" href="/creators">Creator protocol</a></div>
+  {% endif %}
+</section>
 {% endblock %}

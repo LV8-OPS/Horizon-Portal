@@ -63,4 +63,10 @@
     <article class="info-card"><span class="card-index">04</span><h3>Large Projects</h3><p>Ambitious projects, including original raid-scale creations.</p></article>
   </div>
 </section>
+<section class="panel panel-stack">
+  <div class="section-head"><p class="section-kicker">CREATOR SHOWCASE</p><h2>Independent creators.</h2><p class="long-copy">Creator entries are community profiles, not user accounts. They exist to document the people and projects behind published content.</p></div>
+  {% if creator_showcase %}
+  <div class="creator-grid">{% for creator in creator_showcase %}<article class="creator-card">{% if creator.image_url %}<img src="{{ creator.image_url }}" alt="" loading="lazy">{% endif %}<span class="section-kicker">CREATOR</span><h3>{{ creator.name }}</h3><p>{{ creator.description }}</p><a class="btn btn-secondary" href="/creators/{{ creator.slug }}">View creator</a></article>{% endfor %}</div>
+  {% else %}<div class="empty-state"><h3>Creator profiles are opening soon.</h3><p>Published Creator entries will appear here as the Workshop grows.</p></div>{% endif %}
+</section>
 {% endblock %}

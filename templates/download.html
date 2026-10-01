@@ -6,10 +6,10 @@
     <h1>Download Horizon Manager.</h1>
     <p class="hero-lead">The official launcher for discovering, installing and managing the Horizon ecosystem. The interface is ready, while the public installer is waiting for its release date.</p>
     <div class="hero-actions">
-      <button class="btn gold-shimmer" id="download-coming-soon" type="button">Download Horizon Manager</button>
+      {% if launcher_download_url %}<a class="btn gold-shimmer" href="{{ launcher_download_url }}">Download Horizon Manager {{ version }}</a>{% else %}<button class="btn gold-shimmer" id="download-coming-soon" type="button">Download Horizon Manager</button>{% endif %}
       <a class="btn btn-secondary" href="/workshop">Explore Workshop</a>
     </div>
-    <p class="download-notice" id="download-notice" role="status">Public release · 06.10.2026 · 19:00 CET</p>
+    <p class="download-notice" id="download-notice" role="status">{{ release_channel|upper }} · Horizon Manager {{ version }} · {{ size }}</p>
   </div>
   <aside class="hero-aside">
     <div class="stat-card"><span class="stat-label">PLATFORM</span><strong>Windows</strong><p>Windows 10 and Windows 11.</p></div>
@@ -28,11 +28,11 @@
 </section>
 
 <section class="panel panel-stack">
-  <div class="section-head"><p class="section-kicker">RELEASE STATUS</p><h2>No fake download.</h2><p class="long-copy">The button above is ready as an interface element, but no public installer is distributed yet. It will not start a download before the public release.</p></div>
+  <div class="section-head"><p class="section-kicker">RELEASE STATUS</p><h2>{{ release_channel|upper }} BUILD</h2><p class="long-copy">Every installer release is paired with version, platform and SHA-256 metadata so the package can be verified before installation.</p></div>
   <div class="release-grid">
     <div class="release-box"><span class="stat-label">DATE</span><strong>06.10.2026</strong><p>Public release</p></div>
     <div class="release-box"><span class="stat-label">TIME</span><strong>19:00 CET</strong><p>Opening time</p></div>
-    <div class="release-box"><span class="stat-label">STATUS</span><strong>PRE-RELEASE</strong><p>Installer not public</p></div>
+    <div class="release-box"><span class="stat-label">SHA-256</span><strong>{{ sha256[:12] if sha256 else "PENDING" }}</strong><p>Verify the complete digest before installation.</p></div>
   </div>
 </section>
 

@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Any
 import os
 import uuid
+import json
+from urllib.request import Request as URLRequest, urlopen
+from urllib.parse import quote
 
 from fastapi import FastAPI, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,6 +55,8 @@ async def security_middleware(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains" if (os.getenv("VERCEL") or os.getenv("HORIZON_ENV", "").lower() == "production") else "max-age=0"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; font-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:"
     return response
 
 
@@ -59,6 +64,18 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 NAV = [("workshop", "/workshop"), ("creators", "/creators"), ("download", "/download")]
+
+API_BASE_URL = os.getenv("HORIZON_API_URL", "https://backend.vercel.app").rstrip("/")
+
+
+def public_api(path: str, timeout: float = 2.5):
+    try:
+        request = URLRequest(f"{API_BASE_URL}{path}", headers={"Accept": "application/json", "User-Agent": "Horizon-Portal/0.9.10"})
+        with urlopen(request, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return None
+
 
 TEXT = {
     "en": {
@@ -289,15 +306,32 @@ async def api_me(request: Request):
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return page(request, "index.html")
+    workshop = public_api("/api/v1/workshop?sort=newest&page=1&limit=1") or {}
+    featured = (workshop.get("items") or [None])[0]
+    return page(request, "index.html", {"featured_project": featured})
 
 
 @app.get("/workshop", response_class=HTMLResponse)
 async def workshop(request: Request):
+    query = request.query_params.get("q", "").strip()
+    game = request.query_params.get("game", "").strip().lower()
+    sort = request.query_params.get("sort", "newest").strip().lower()
+    data = public_api(f"/api/v1/workshop?search={quote(query)}&game={quote(game)}&sort={quote(sort)}&page=1&limit=24") or {}
     return page(request, "workshop.html", {
-        "features": ["Discover projects", "Check compatibility", "Follow updates", "Install with confidence"],
-        "categories": ["Weapons", "Missions", "D1 Imports", "HUD", "Sandbox", "Utilities"],
+        "items": data.get("items", []),
+        "total": data.get("total", 0),
+        "search": query,
+        "game": game,
+        "sort": sort,
     })
+
+
+@app.get("/workshop/{project_id}", response_class=HTMLResponse)
+async def workshop_project(request: Request, project_id: int):
+    project = public_api(f"/api/v1/workshop/{project_id}")
+    if not project:
+        return RedirectResponse(url="/workshop", status_code=303)
+    return page(request, "workshop_project.html", {"project": project})
 
 
 @app.get("/creators", response_class=HTMLResponse)
@@ -324,6 +358,22 @@ async def download(request: Request):
 @app.get("/downloads", response_class=HTMLResponse)
 async def downloads(request: Request):
     return page(request, "downloads.html")
+
+
+@app.get("/status", response_class=HTMLResponse)
+async def status_page(request: Request):
+    data = public_api("/api/v1/status") or {"services": {"Website": "Operational", "API": "Unreachable from website"}, "timestamp": None}
+    return page(request, "status.html", {"services": data.get("services", {}), "checked_at": data.get("timestamp") or "Live check unavailable"})
+
+
+@app.get("/docs", response_class=HTMLResponse)
+async def docs_page(request: Request):
+    return page(request, "docs.html")
+
+
+@app.get("/roadmap", response_class=HTMLResponse)
+async def roadmap_page(request: Request):
+    return page(request, "roadmap.html")
 
 
 @app.get("/account", response_class=HTMLResponse)

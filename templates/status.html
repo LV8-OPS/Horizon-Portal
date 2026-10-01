@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero"><div><p class="eyebrow gold-shimmer">HORIZON STATUS</p><h1>System status.</h1><p class="hero-lead">A small public view of the services that keep Horizon Portal running.</p></div></section>
+<section class="panel panel-stack"><div class="status-grid">
+  {% for name, state in services.items() %}<article class="status-item"><span class="status-dot status-dot-live"></span><div><strong>{{ name }}</strong><p>{{ state }}</p></div><span class="meta">OPERATIONAL</span></article>{% endfor %}
+</div></section>
+<section class="panel panel-stack"><div class="section-head"><p class="section-kicker">LAST CHECK</p><h2>{{ checked_at }}</h2><p class="long-copy">Status is informational and does not expose internal infrastructure details.</p></div></section>
+{% endblock %}
