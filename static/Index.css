@@ -250,3 +250,8 @@ body {
   .feature-copy h3 { font-size:27px; }
   .feature-copy p { font-size:15px; }
 }
+
+/* Network canvas visibility fix */
+#particles{position:fixed!important;inset:0!important;z-index:1!important;display:block!important;visibility:visible!important;opacity:.78!important;pointer-events:none!important;}
+.topbar,.shell,.footer{position:relative;z-index:2;}
+
