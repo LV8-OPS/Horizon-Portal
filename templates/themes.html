@@ -4,7 +4,7 @@
   <div>
     <p class="eyebrow">Themes</p>
     <h1>Horizon Art Direction.</h1>
-    <p class="hero-lead">Chaque thème est contrôlé côté serveur. L'interface peut afficher un thème verrouillé, mais l'API ne délivre jamais son accès sans le droit correspondant.</p>
+    <p class="hero-lead">Each theme is controlled server-side. The interface may display a locked theme, but access is never granted without the required entitlement.</p>
   </div>
 </section>
 <section class="panel">
@@ -15,9 +15,9 @@
       <h3>{{ theme.title }}</h3>
       <p>
         {% if theme.unlocked %}
-          Accès autorisé pour ce compte.
+          Access granted for this account.
         {% else %}
-          Accès verrouillé. {{ theme.requirement }}.
+          Access locked. {{ theme.requirement }}.
         {% endif %}
       </p>
       <div class="theme-access">
