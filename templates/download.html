@@ -6,10 +6,10 @@
     <h1>Download Horizon Manager.</h1>
     <p class="hero-lead">The official launcher for discovering, installing and managing the Horizon ecosystem. The interface is ready, while the public installer is waiting for its release date.</p>
     <div class="hero-actions">
-      {% if launcher_download_url %}<a class="btn gold-shimmer" href="{{ launcher_download_url }}">Download Horizon Manager {{ version }}</a>{% else %}<button class="btn gold-shimmer" id="download-coming-soon" type="button">Download Horizon Manager</button>{% endif %}
+      <button class="btn gold-shimmer" id="download-coming-soon" type="button" disabled>Download Horizon Manager</button>
       <a class="btn btn-secondary" href="/workshop">Explore Workshop</a>
     </div>
-    <p class="download-notice" id="download-notice" role="status">{{ release_channel|upper }} · Horizon Manager {{ version }} · {{ size }}</p>
+    <p class="download-notice" id="download-notice" role="status">DOWNLOAD TEMPORARILY DISABLED · Horizon Manager {{ version }} · Public installer unavailable until release.</p>
   </div>
   <aside class="hero-aside">
     <div class="stat-card"><span class="stat-label">PLATFORM</span><strong>Windows</strong><p>Windows 10 and Windows 11.</p></div>
@@ -39,7 +39,7 @@
 <script>
 document.getElementById("download-coming-soon")?.addEventListener("click", () => {
   const notice = document.getElementById("download-notice");
-  if (notice) notice.textContent = "Horizon Manager will be available on 06 October 2026 at 19:00 CET.";
+  if (notice) notice.textContent = "The Horizon Manager installer is temporarily unavailable. Public release: 06 October 2026 at 19:00 CET.";
 });
 </script>
 {% endblock %}
