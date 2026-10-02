@@ -24,7 +24,21 @@
 </section>
 <section class="panel panel-stack">
   <div class="section-head"><p class="section-kicker">INTEGRITY</p><h2>Verify before installing.</h2><p class="long-copy">The published package has a SHA-256 digest so the file can be independently verified.</p></div>
-  <code class="hash-box">{{ project.sha256 or "SHA-256 unavailable" }}</code>
-  {% if project.download_url %}<div class="hero-actions"><a class="btn gold-shimmer" href="{{ project.download_url }}">Download project</a><a class="btn btn-secondary" href="/workshop">Back to Workshop</a></div>{% else %}<p class="meta">The download is currently unavailable.</p>{% endif %}
+  {% if project.source_type == "github" %}
+    <div class="release-grid">
+      <div class="release-box"><span class="stat-label">SOURCE</span><strong>GitHub</strong><p>Community repository</p></div>
+      <div class="release-box"><span class="stat-label">INSTALLATION</span><strong>README.md</strong><p>Follow the creator instructions</p></div>
+    </div>
+    <div class="hero-actions">
+      {% if project.github_readme_url %}<a class="btn gold-shimmer" href="{{ project.github_readme_url }}" target="_blank" rel="noopener noreferrer">Open installation guide</a>{% endif %}
+      {% if project.github_release_url %}<a class="btn btn-secondary" href="{{ project.github_release_url }}" target="_blank" rel="noopener noreferrer">Open GitHub Release</a>{% endif %}
+      {% if project.github_url %}<a class="btn btn-secondary" href="{{ project.github_url }}" target="_blank" rel="noopener noreferrer">Open repository</a>{% endif %}
+      <a class="btn btn-secondary" href="/workshop">Back to Workshop</a>
+    </div>
+    <p class="meta">Horizon does not automatically modify your Destiny installation. Use the creator's README instructions.</p>
+  {% else %}
+    <code class="hash-box">{{ project.sha256 or "SHA-256 unavailable" }}</code>
+    {% if project.download_url %}<div class="hero-actions"><a class="btn gold-shimmer" href="{{ project.download_url }}">Download project</a><a class="btn btn-secondary" href="/workshop">Back to Workshop</a></div>{% else %}<p class="meta">The download is currently unavailable.</p>{% endif %}
+  {% endif %}
 </section>
 {% endblock %}
