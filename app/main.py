@@ -348,10 +348,11 @@ async def creator(request: Request):
 async def download(request: Request):
     return page(request, "download.html", {
         "version": "0.9.1",
-        "size": "12.5 MB",
+        "size": "Temporarily unavailable",
         "system": "Windows 10 / 11",
-        "launcher_download_url": "/static/downloads/Horizon%20Manager_0.9.1_x64-setup.exe",
-        "steps": ["Download the installer", "Run the .exe", "Install Horizon Manager", "Open the launcher"],
+        "launcher_download_url": None,
+        "release_channel": "Preview",
+        "steps": ["Wait for the public release", "Download the official installer", "Run the .exe", "Open Horizon Manager"],
     })
 
 
