@@ -65,7 +65,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 NAV = [("workshop", "/workshop"), ("creators", "/creators"), ("download", "/download")]
 
-API_BASE_URL = os.getenv("HORIZON_API_URL", "https://backend.vercel.app").rstrip("/")
+API_BASE_URL = os.getenv("HORIZON_API_URL", "https://api.horizon-portal.xyz").rstrip("/")
 
 
 def public_api(path: str, timeout: float = 2.5):
