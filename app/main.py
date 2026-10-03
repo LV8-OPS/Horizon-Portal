@@ -605,29 +605,14 @@ _horizon_remove_routes("/register", {"GET"})
 _horizon_remove_routes("/logout", {"POST"})
 
 
-@app.get("/login", response_class=HTMLResponse)
+@app.get("/login")
 async def horizon_login_page(request: Request):
-    next_url = request.query_params.get("next", "/account")
-
-    if not next_url.startswith("/"):
-        next_url = "/account"
-
-    return templates.TemplateResponse(
-        request=request,
-        name="login.html",
-        context=_horizon_context(
-            request,
-            {"next": next_url}
-        )
-    )
+    return RedirectResponse(url="/", status_code=303)
 
 
-@app.get("/register", response_class=HTMLResponse)
+@app.get("/register")
 async def horizon_register_page(request: Request):
-    return RedirectResponse(
-        url="/api/auth/discord/start?mode=web",
-        status_code=303,
-    )
+    return RedirectResponse(url="/", status_code=303)
 
 
 @app.post("/logout")
