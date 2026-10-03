@@ -377,6 +377,16 @@ async def roadmap_page(request: Request):
     return page(request, "roadmap.html")
 
 
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_page(request: Request):
+    return page(request, "terms.html", {"lang": "en", "t": lambda key: TEXT["en"].get(key, key)})
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_page(request: Request):
+    return page(request, "privacy.html", {"lang": "en", "t": lambda key: TEXT["en"].get(key, key)})
+
+
 @app.get("/account", response_class=HTMLResponse)
 async def account(request: Request):
     user = current_user(request)
